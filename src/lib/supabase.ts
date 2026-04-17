@@ -1,32 +1,33 @@
-// src/lib/supabase.ts (Mock complet)
+// src/lib/supabase.ts
+
 export const supabase = {
   auth: {
-    // Méthodes de base
-    signUp: async () => ({ data: null, error: null }),
-    signInWithPassword: async () => ({ data: null, error: null }),
-    signOut: async () => ({ error: null }),
-    getUser: async () => ({ data: { user: null }, error: null }),
-    
-    // ⭐ Méthodes manquantes ajoutées ici
-    getSession: async () => ({ data: { session: null }, error: null }),
+    getSession: async () => ({
+      data: { session: null },
+      error: null,
+    }),
     onAuthStateChange: (callback: (event: string, session: any) => void) => {
-      // Appelle le callback immédiatement avec une session nulle
-      callback('INITIAL_SESSION', null);
-      // Retourne un objet avec une fonction d'unsubscribe factice
+      // Simule l'état initial : utilisateur non connecté
+      callback('SIGNED_OUT', null);
+      // Retourne un objet avec une fonction unsubscribe
       return {
         data: {
           subscription: {
-            unsubscribe: () => {}
-          }
-        }
+            unsubscribe: () => {},
+          },
+        },
       };
-    }
+    },
+    signOut: async () => ({ error: null }),
+    signUp: async () => ({ data: null, error: null }),
+    signInWithPassword: async () => ({ data: null, error: null }),
+    getUser: async () => ({ data: { user: null }, error: null }),
   },
-  from: () => ({
+  from: (table: string) => ({
     select: () => ({
       eq: () => ({
-        single: async () => ({ data: null, error: null })
-      })
-    })
-  })
+        single: async () => ({ data: null, error: null }),
+      }),
+    }),
+  }),
 };
