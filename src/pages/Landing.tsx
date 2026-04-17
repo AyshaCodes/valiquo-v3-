@@ -397,8 +397,40 @@ export default function Landing({ navigate }: LandingProps) {
   return (
     <div style={{ position:'relative', zIndex:10 }}>
 
-    
-    
+      {/* ── NAVBAR ── */}
+      <nav className="vnav">
+        <a href="/" style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'1.25rem', textDecoration:'none', color:'var(--white)', letterSpacing:'-.02em' }}>
+          Vali<span style={{ color:'var(--mint)' }}>quo</span>
+        </a>
+
+        {/* desktop links */}
+        <ul className="hide-mobile" style={{ display:'flex', gap:'2rem', listStyle:'none' }}>
+          {['#demo','#features','#pricing'].map((href, i) => (
+            <li key={href}>
+              <a href={href} style={{ color:'var(--slate)', textDecoration:'none', fontSize:'.85rem', transition:'color .2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color='var(--white)')}
+                onMouseLeave={e => (e.currentTarget.style.color='var(--slate)')}>
+                {['Démo','Fonctionnalités','Tarifs'][i]}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <div style={{ display:'flex', alignItems:'center', gap:'.75rem' }}>
+          <button className="vbtn-ghost hide-mobile" style={{ padding:'.5rem 1rem', fontSize:'.82rem' }} onClick={() => navigate('login')}>Connexion</button>
+          <button className="vbtn-primary" style={{ padding:'.55rem 1.1rem', fontSize:'.82rem' }} onClick={() => navigate('register')}>Commencer →</button>
+          {/* hamburger */}
+          <button
+            style={{ background:'none', border:'none', color:'var(--white)', cursor:'pointer', display:'none' }}
+            className="show-mobile"
+            onClick={() => setMenuOpen(v => !v)}
+            aria-label="Menu"
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+      </nav>
+
       {/* mobile menu */}
       {menuOpen && (
         <div style={{
