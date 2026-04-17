@@ -139,8 +139,6 @@ const STYLES = `
     90% { top: 95%; opacity:1; }
     100%{ top: 95%; opacity:0; }
   }
-  @keyframes barGrow { from{width:0} to{width:var(--w)} }
-  @keyframes countUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
   .anim-fade-up  { animation: fadeUp .7s ease both; }
   .anim-d1 { animation-delay: .1s; }
@@ -193,7 +191,7 @@ const STYLES = `
   .vnav {
     position: fixed; top:0; left:0; right:0; z-index:300;
     display:flex; align-items:center; justify-content:space-between;
-    padding: .95rem 2.5rem;
+    padding: .95rem 1.5rem;
     background: rgba(13,27,42,.8);
     backdrop-filter: blur(22px);
     border-bottom: 1px solid var(--border);
@@ -206,14 +204,38 @@ const STYLES = `
   .badge-danger { background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.25); color:var(--danger); }
 
   /* ── RESPONSIVE ── */
-  @media(max-width:768px){
-    .vnav { padding:.9rem 1.2rem; }
-    .hide-mobile { display:none !important; }
-    .stack-mobile { flex-direction:column !important; align-items:stretch !important; }
-    .stack-mobile > * { width:100% !important; text-align:center; justify-content:center; }
+  @media(max-width: 768px) {
+    .vnav { padding: 1rem 1.2rem; }
+    .hide-mobile { display: none !important; }
+    .show-mobile { display: block !important; }
+    .stack-mobile { flex-direction: column !important; align-items: stretch !important; }
+    .stack-mobile > * { width: 100% !important; text-align: center; justify-content: center; white-space: normal; }
+    .hero-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+    .hero-cards { flex-direction: column !important; align-items: center !important; }
+    .grid-3-cols { grid-template-columns: 1fr !important; }
+    .grid-4-cols { grid-template-columns: 1fr 1fr !important; }
+    .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 1.5rem !important; }
+    .process-grid { grid-template-columns: 1fr !important; }
+    .process-grid .chevron { display: none !important; }
+    .pricing-grid { grid-template-columns: 1fr !important; max-width: 400px; margin: 0 auto; }
+    .stats-grid { grid-template-columns: 1fr 1fr !important; }
+    .hero-product-preview { grid-template-columns: 1fr !important; gap: 1rem !important; }
+    .hero-product-preview .swot-mini { grid-template-columns: 1fr !important; }
+    .hero-ctas { flex-direction: column; width: 100%; }
+    .hero-ctas button { width: 100%; justify-content: center; }
+    .section-padding { padding: 3rem 1.2rem !important; }
+    .text-responsive { font-size: 0.9rem !important; }
+    h1 { font-size: 2rem !important; }
+    h2 { font-size: 1.5rem !important; }
   }
-  @media(max-width:640px){
-    .col2-mobile { grid-template-columns:1fr !important; }
+
+  @media(max-width: 480px) {
+    .grid-4-cols { grid-template-columns: 1fr !important; }
+    .stats-grid { grid-template-columns: 1fr !important; }
+    .footer-grid { grid-template-columns: 1fr !important; text-align: center; }
+    .footer-grid > div { text-align: center; margin: 0 auto; }
+    .score-ring { width: 70px; height: 70px; }
+    .score-ring span { font-size: 1rem; }
   }
 `;
 
@@ -267,7 +289,6 @@ function DemoScanner({ navigate }: { navigate: (to: Page) => void }) {
 
   return (
     <div className="vcard" style={{ padding: '1.5rem', maxWidth: 560, margin: '0 auto' }}>
-      {/* Window bar */}
       <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:'1rem' }}>
         <span style={{ width:10,height:10,borderRadius:'50%',background:'#f87171',display:'block' }} />
         <span style={{ width:10,height:10,borderRadius:'50%',background:'#fbbf24',display:'block' }} />
@@ -336,7 +357,6 @@ export default function Landing({ navigate }: LandingProps) {
   const procR    = useReveal();
   const pricingR = useReveal();
 
-  /* Inject styles once */
   useEffect(() => {
     if (document.getElementById('valiquo-styles')) return;
     const el = document.createElement('style');
@@ -397,162 +417,106 @@ export default function Landing({ navigate }: LandingProps) {
   return (
     <div style={{ position:'relative', zIndex:10 }}>
 
-      {/* ── NAVBAR ── */}
-      <nav className="vnav">
-        <a href="/" style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'1.25rem', textDecoration:'none', color:'var(--white)', letterSpacing:'-.02em' }}>
-          Vali<span style={{ color:'var(--mint)' }}>quo</span>
-        </a>
+     
 
-        {/* desktop links */}
-        <ul className="hide-mobile" style={{ display:'flex', gap:'2rem', listStyle:'none' }}>
-          {['#demo','#features','#pricing'].map((href, i) => (
-            <li key={href}>
-              <a href={href} style={{ color:'var(--slate)', textDecoration:'none', fontSize:'.85rem', transition:'color .2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color='var(--white)')}
-                onMouseLeave={e => (e.currentTarget.style.color='var(--slate)')}>
-                {['Démo','Fonctionnalités','Tarifs'][i]}
-              </a>
-            </li>
-          ))}
-        </ul>
+    
 
-        <div style={{ display:'flex', alignItems:'center', gap:'.75rem' }}>
-          <button className="vbtn-ghost hide-mobile" style={{ padding:'.5rem 1rem', fontSize:'.82rem' }} onClick={() => navigate('login')}>Connexion</button>
-          <button className="vbtn-primary" style={{ padding:'.55rem 1.1rem', fontSize:'.82rem' }} onClick={() => navigate('register')}>Commencer →</button>
-          {/* hamburger */}
-          <button
-            style={{ background:'none', border:'none', color:'var(--white)', cursor:'pointer', display:'none' }}
-            className="show-mobile"
-            onClick={() => setMenuOpen(v => !v)}
-            aria-label="Menu"
-          >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-      </nav>
-
-      {/* mobile menu */}
-      {menuOpen && (
-        <div style={{
-          position:'fixed', inset:0, zIndex:200, background:'rgba(13,27,42,.97)',
-          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'2rem',
-          animation:'fadeIn .2s ease both'
-        }}>
-          <button style={{ position:'absolute', top:'1.2rem', right:'1.2rem', background:'none', border:'none', color:'var(--white)', cursor:'pointer' }} onClick={() => setMenuOpen(false)}><X size={24}/></button>
-          {[['#demo','Démo'],['#features','Fonctionnalités'],['#pricing','Tarifs']].map(([h,l]) => (
-            <a key={h} href={h} style={{ color:'var(--white)', textDecoration:'none', fontSize:'1.3rem', fontFamily:'Syne,sans-serif', fontWeight:700 }} onClick={() => setMenuOpen(false)}>{l}</a>
-          ))}
-          <button className="vbtn-primary" onClick={() => { navigate('register'); setMenuOpen(false); }}>Commencer gratuitement</button>
-        </div>
-      )}
-
-      {/* ══════════ HERO ══════════ */}
-      <section style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', paddingTop:'5.5rem', paddingBottom:'3rem', padding:'5.5rem 1.5rem 3rem', position:'relative', overflow:'hidden' }}>
-        {/* orbs */}
+      {/* HERO */}
+      <section style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'6rem 1.2rem 3rem', position:'relative', overflow:'hidden' }}>
         <div className="orb" style={{ width:500,height:500,background:'var(--mint)',top:'-120px',left:'-100px' }} />
         <div className="orb" style={{ width:400,height:400,background:'#6366f1',bottom:'-80px',right:'-80px' }} />
 
         <div style={{ maxWidth:860, margin:'0 auto', textAlign:'center', position:'relative', zIndex:1 }}>
-          {/* badge */}
           <div className="anim-fade-up" style={{ display:'inline-flex', alignItems:'center', gap:'.5rem', background:'rgba(79,209,197,.1)', border:'1px solid rgba(79,209,197,.28)', color:'var(--mint)', padding:'.35rem 1rem', borderRadius:100, fontSize:'.72rem', fontWeight:700, letterSpacing:'.06em', textTransform:'uppercase', marginBottom:'1.8rem' }}>
             <span style={{ width:7,height:7,borderRadius:'50%',background:'var(--mint)',animation:'glow 2s ease-in-out infinite',display:'block' }} />
             IA de validation · Marché marocain · Bêta ouverte
           </div>
 
-          {/* H1 */}
-          <h1 className="anim-fade-up anim-d1 font-syne" style={{ fontSize:'clamp(2.4rem,6.5vw,5rem)', fontWeight:800, lineHeight:1.02, letterSpacing:'-.03em', marginBottom:'1.2rem' }}>
+          <h1 className="anim-fade-up anim-d1 font-syne" style={{ fontSize:'clamp(2.2rem, 6vw, 4.5rem)', fontWeight:800, lineHeight:1.1, letterSpacing:'-.03em', marginBottom:'1.2rem' }}>
             Prouve la demande.
             <br />
             <span className="vgrad">Avant de te lancer.</span>
           </h1>
 
-          {/* sub */}
-          <p className="anim-fade-up anim-d2" style={{ color:'var(--slate)', fontSize:'1rem', lineHeight:1.75, maxWidth:520, margin:'0 auto 2.5rem', fontWeight:300 }}>
+          <p className="anim-fade-up anim-d2" style={{ color:'var(--slate)', fontSize:'clamp(0.9rem, 4vw, 1rem)', lineHeight:1.6, maxWidth:520, margin:'0 auto 2rem', fontWeight:300 }}>
             Valiquo scanne ton idée sur le marché marocain en 5 minutes — score de validation, SWOT et plan d'action concret avant d'investir un seul dirham.
           </p>
 
-          {/* CTAs */}
-          <div className="anim-fade-up anim-d3 stack-mobile" style={{ display:'flex', gap:'.8rem', justifyContent:'center', marginBottom:'3.5rem' }}>
-            <button className="vbtn-primary anim-pulse-glow" style={{ fontSize:'.95rem', padding:'.85rem 2rem' }} onClick={() => navigate('scan')}>
+          <div className="anim-fade-up anim-d3" style={{ display:'flex', gap:'1rem', justifyContent:'center', flexWrap:'wrap', marginBottom:'2.5rem' }}>
+            <button className="vbtn-primary" style={{ fontSize:'0.9rem', padding:'0.75rem 1.5rem' }} onClick={() => navigate('scan')}>
               <Zap size={17} /> Scanner mon idée gratuitement
             </button>
-            <button className="vbtn-ghost" style={{ fontSize:'.95rem', padding:'.85rem 2rem' }} onClick={() => document.querySelector('#demo')?.scrollIntoView({ behavior:'smooth' })}>
+            <button className="vbtn-ghost" style={{ fontSize:'0.9rem', padding:'0.75rem 1.5rem' }} onClick={() => document.querySelector('#demo')?.scrollIntoView({ behavior:'smooth' })}>
               Voir une démo <ChevronRight size={15} />
             </button>
           </div>
 
-          {/* trust row */}
-          <div className="anim-fade-up anim-d4" style={{ display:'flex', flexWrap:'wrap', gap:'1.2rem', justifyContent:'center' }}>
+          <div className="anim-fade-up anim-d4" style={{ display:'flex', flexWrap:'wrap', gap:'1rem', justifyContent:'center' }}>
             {[
               { icon:<Star size={13}/>, txt:'100 % gratuit pour commencer' },
               { icon:<Clock size={13}/>, txt:'Résultats en moins de 5 min' },
               { icon:<CheckCircle size={13}/>, txt:'Aucune carte bancaire requise' },
             ].map(({ icon, txt }) => (
-              <div key={txt} style={{ display:'flex', alignItems:'center', gap:'.35rem', fontSize:'.78rem', color:'var(--slate)' }}>
+              <div key={txt} style={{ display:'flex', alignItems:'center', gap:'.35rem', fontSize:'.75rem', color:'var(--slate)' }}>
                 <span style={{ color:'var(--mint)' }}>{icon}</span>{txt}
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Hero product preview ── */}
-        <div className="anim-fade-up anim-d4" style={{ maxWidth:760, width:'100%', margin:'4rem auto 0', padding:'0 1rem', position:'relative', zIndex:1 }}>
-          <div className="vcard" style={{ padding:'1.6rem', position:'relative', overflow:'hidden' }}>
-            {/* scan line animation */}
+        {/* Hero product preview (responsive) */}
+        <div className="anim-fade-up anim-d4" style={{ maxWidth:760, width:'100%', margin:'3rem auto 0', padding:'0 1rem' }}>
+          <div className="vcard" style={{ padding:'1.2rem', position:'relative', overflow:'hidden' }}>
             <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,var(--mint),transparent)', animation:'scanLine 2.8s ease-in-out infinite', opacity:.5 }} />
-
-            <div style={{ fontSize:'.68rem', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--mint)', marginBottom:'1rem', display:'flex', alignItems:'center', gap:'.4rem' }}>
+            <div style={{ fontSize:'.65rem', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--mint)', marginBottom:'1rem', display:'flex', alignItems:'center', gap:'.4rem' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'var(--mint)',boxShadow:'0 0 6px var(--mint)',display:'block' }} />
               Rapport de validation · Casablanca · Logistique
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'.9rem' }}>
-              {/* score */}
-              <div style={{ display:'flex', flexDirection:'column', gap:'.6rem' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'.9rem' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'1rem' }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.8rem', flexWrap:'wrap' }}>
                   <div className="score-ring" style={{ '--pct':'78' } as React.CSSProperties}>
                     <span>78</span>
                   </div>
                   <div>
-                    <div className="font-syne" style={{ fontWeight:700, fontSize:'.88rem', marginBottom:'.2rem' }}>Forte demande</div>
-                    <div style={{ fontSize:'.72rem', color:'var(--slate)' }}>1 240 signaux détectés</div>
-                    <div style={{ display:'flex', gap:'.4rem', flexWrap:'wrap', marginTop:'.5rem' }}>
-                      <span className="badge-mint" style={{ fontSize:'.62rem', padding:'.2rem .55rem', borderRadius:100, fontWeight:600 }}>Marché validé</span>
-                      <span className="badge-warn" style={{ fontSize:'.62rem', padding:'.2rem .55rem', borderRadius:100, fontWeight:600 }}>B2C</span>
+                    <div className="font-syne" style={{ fontWeight:700, fontSize:'0.85rem' }}>Forte demande</div>
+                    <div style={{ fontSize:'0.7rem', color:'var(--slate)' }}>1 240 signaux détectés</div>
+                    <div style={{ display:'flex', gap:'0.3rem', flexWrap:'wrap', marginTop:'0.3rem' }}>
+                      <span className="badge-mint" style={{ fontSize:'0.55rem', padding:'0.1rem 0.4rem' }}>Marché validé</span>
+                      <span className="badge-warn" style={{ fontSize:'0.55rem', padding:'0.1rem 0.4rem' }}>B2C</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* swot mini */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.5rem' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'0.5rem' }}>
                 {[
                   { c:'swot-s', t:'Forces', v:'Besoin récurrent, marché non couvert' },
                   { c:'swot-w', t:'Faiblesses', v:'Besoin de partenariats logistiques' },
                   { c:'swot-o', t:'Opportunités', v:'E-commerce marocain en forte croissance' },
                   { c:'swot-t', t:'Menaces', v:'Entrée potentielle de Google Maps' },
                 ].map(({ c, t, v }) => (
-                  <div key={t} className={c} style={{ borderRadius:8, padding:'.5rem .6rem' }}>
-                    <div style={{ fontSize:'.58rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em', marginBottom:'.2rem',
+                  <div key={t} className={c} style={{ borderRadius:8, padding:'0.4rem 0.5rem' }}>
+                    <div style={{ fontSize:'0.55rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'0.1rem',
                       color: c==='swot-s'?'var(--mint)':c==='swot-w'?'var(--danger)':c==='swot-o'?'var(--warn)':'#a78bfa' }}>{t}</div>
-                    <div style={{ fontSize:'.66rem', color:'var(--gray)', lineHeight:1.4 }}>{v}</div>
+                    <div style={{ fontSize:'0.6rem', color:'var(--gray)', lineHeight:1.3 }}>{v}</div>
                   </div>
                 ))}
               </div>
 
-              {/* reco */}
               <div>
-                <div style={{ fontSize:'.65rem', fontWeight:700, letterSpacing:'.09em', textTransform:'uppercase', color:'var(--mint)', marginBottom:'.6rem' }}>Plan d'action</div>
+                <div style={{ fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'var(--mint)', marginBottom:'0.5rem' }}>Plan d'action</div>
                 {[
                   'Mener 10 entretiens livreurs à Casablanca cette semaine',
                   'Créer un prototype de localisation simplifié',
                   'Démarcher Glovo Maroc comme premier partenaire',
                 ].map((txt, i) => (
-                  <div key={i} style={{ display:'flex', gap:'.5rem', alignItems:'flex-start', marginBottom:'.45rem' }}>
-                    <div style={{ width:18,height:18,borderRadius:'50%',background:'var(--mint-dim)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:'.05rem' }}>
-                      <span className="font-syne" style={{ fontSize:'.55rem', fontWeight:800, color:'var(--mint)' }}>{i+1}</span>
+                  <div key={i} style={{ display:'flex', gap:'0.4rem', alignItems:'flex-start', marginBottom:'0.4rem' }}>
+                    <div style={{ width:18,height:18,borderRadius:'50%',background:'var(--mint-dim)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:'0.05rem' }}>
+                      <span className="font-syne" style={{ fontSize:'0.55rem', fontWeight:800, color:'var(--mint)' }}>{i+1}</span>
                     </div>
-                    <div style={{ fontSize:'.7rem', color:'var(--gray)', lineHeight:1.45 }}>{txt}</div>
+                    <div style={{ fontSize:'0.65rem', color:'var(--gray)', lineHeight:1.4 }}>{txt}</div>
                   </div>
                 ))}
               </div>
@@ -561,196 +525,180 @@ export default function Landing({ navigate }: LandingProps) {
         </div>
       </section>
 
-      {/* ══════════ STATS ══════════ */}
+      {/* STATS */}
       <div ref={statsR.ref} style={{ borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', background:'rgba(20,32,50,.5)', backdropFilter:'blur(10px)' }}>
-        <div style={{ maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4,1fr)', padding:'0 1.5rem' }}>
+        <div style={{ maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4, 1fr)', padding:'0 1rem' }}>
           {[
             { val:90, suf:'%', lbl:'des startups échouent sans PMF' },
             { val:5,  suf:' min', lbl:'pour un rapport complet' },
             { val:0,  suf:' MAD', lbl:'pour commencer' },
             { val:1240, suf:'+', lbl:'signaux analysés par scan' },
           ].map(({ val, suf, lbl }) => (
-            <div key={lbl} style={{ textAlign:'center', padding:'2rem 1rem', borderRight:'1px solid var(--border)' }}
+            <div key={lbl} style={{ textAlign:'center', padding:'1.5rem 0.5rem', borderRight:'1px solid var(--border)' }}
               className={statsR.on ? '' : 'reveal'}>
-              <div className="font-syne" style={{ fontSize:'clamp(1.6rem,3vw,2.2rem)', fontWeight:800, marginBottom:'.3rem' }}>
+              <div className="font-syne" style={{ fontSize:'clamp(1.3rem, 4vw, 2rem)', fontWeight:800, marginBottom:'0.2rem' }}>
                 <Counter to={val} suffix={suf} />
               </div>
-              <div style={{ fontSize:'.75rem', color:'var(--slate)', lineHeight:1.45 }}>{lbl}</div>
+              <div style={{ fontSize:'0.7rem', color:'var(--slate)', lineHeight:1.4 }}>{lbl}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ══════════ PROBLÈME ══════════ */}
-      <section style={{ padding:'5.5rem 1.5rem' }} ref={probR.ref}>
+      {/* PROBLÈME */}
+      <section style={{ padding:'3rem 1rem' }} ref={probR.ref}>
         <div style={{ maxWidth:960, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:'3rem' }}>
-            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'.7rem' }}>Le problème</div>
-            <h2 className="font-syne" style={{ fontSize:'clamp(1.7rem,3.5vw,2.6rem)', fontWeight:800, letterSpacing:'-.025em' }}>
+          <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'0.5rem' }}>Le problème</div>
+            <h2 className="font-syne" style={{ fontSize:'clamp(1.5rem, 5vw, 2.2rem)', fontWeight:800, letterSpacing:'-.025em' }}>
               Pourquoi tant de projets <span className="vgrad">échouent</span> ?
             </h2>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:'1.1rem' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'1rem' }}>
             {obstacles.map((o, i) => (
-              <div key={o.titre} className={`vcard ${probR.on ? `reveal on reveal-d${i+1}` : 'reveal'}`} style={{ padding:'1.8rem' }}>
-                <div style={{ width:44,height:44,borderRadius:10,background:'rgba(248,113,113,.1)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'1rem' }}>
+              <div key={o.titre} className={`vcard ${probR.on ? `reveal on reveal-d${i+1}` : 'reveal'}`} style={{ padding:'1.5rem' }}>
+                <div style={{ width:40,height:40,borderRadius:10,background:'rgba(248,113,113,.1)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'0.8rem' }}>
                   {o.icon}
                 </div>
-                <h3 className="font-syne" style={{ fontWeight:700, fontSize:'.95rem', marginBottom:'.5rem' }}>{o.titre}</h3>
-                <p style={{ fontSize:'.83rem', color:'var(--slate)', lineHeight:1.65 }}>{o.desc}</p>
+                <h3 className="font-syne" style={{ fontWeight:700, fontSize:'0.9rem', marginBottom:'0.3rem' }}>{o.titre}</h3>
+                <p style={{ fontSize:'0.8rem', color:'var(--slate)', lineHeight:1.5 }}>{o.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══════════ DÉMO ══════════ */}
-      <section id="demo" style={{ padding:'5.5rem 1.5rem', borderTop:'1px solid var(--border)' }}>
+      {/* DÉMO */}
+      <section id="demo" style={{ padding:'3rem 1rem', borderTop:'1px solid var(--border)' }}>
         <div style={{ maxWidth:680, margin:'0 auto', textAlign:'center' }}>
-          <div className="vlabel" style={{ justifyContent:'center', marginBottom:'.7rem' }}>Démo interactive</div>
-          <h2 className="font-syne" style={{ fontSize:'clamp(1.7rem,3.5vw,2.5rem)', fontWeight:800, letterSpacing:'-.025em', marginBottom:'.8rem' }}>
+          <div className="vlabel" style={{ justifyContent:'center', marginBottom:'0.5rem' }}>Démo interactive</div>
+          <h2 className="font-syne" style={{ fontSize:'clamp(1.5rem, 5vw, 2.2rem)', fontWeight:800, letterSpacing:'-.025em', marginBottom:'0.5rem' }}>
             Essaie <span className="vgrad">par toi-même</span>
           </h2>
-          <p style={{ fontSize:'.88rem', color:'var(--slate)', marginBottom:'2.5rem', lineHeight:1.65 }}>
+          <p style={{ fontSize:'0.85rem', color:'var(--slate)', marginBottom:'1.5rem', lineHeight:1.5 }}>
             Décris un problème et obtiens un aperçu de ce que Valiquo peut faire pour toi.
           </p>
           <DemoScanner navigate={navigate} />
         </div>
       </section>
 
-      {/* ══════════ FEATURES ══════════ */}
-      <section id="features" style={{ padding:'5.5rem 1.5rem', borderTop:'1px solid var(--border)' }} ref={featR.ref}>
+      {/* FEATURES */}
+      <section id="features" style={{ padding:'3rem 1rem', borderTop:'1px solid var(--border)' }} ref={featR.ref}>
         <div style={{ maxWidth:1040, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:'3rem' }}>
-            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'.7rem' }}>Fonctionnalités</div>
-            <h2 className="font-syne" style={{ fontSize:'clamp(1.7rem,3.5vw,2.5rem)', fontWeight:800, letterSpacing:'-.025em' }}>
+          <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'0.5rem' }}>Fonctionnalités</div>
+            <h2 className="font-syne" style={{ fontSize:'clamp(1.5rem, 5vw, 2.2rem)', fontWeight:800, letterSpacing:'-.025em' }}>
               Tout ce qu'il te faut pour <span className="vgrad">valider</span>
             </h2>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'1.1rem' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:'1rem' }}>
             {features.map((f, i) => (
-              <div key={f.titre} className={`vcard ${featR.on ? `reveal on reveal-d${Math.min(i+1,3)}` : 'reveal'}`} style={{ padding:'1.6rem' }}>
-                <div style={{ width:42,height:42,borderRadius:10,background:'var(--mint-dim)',color:'var(--mint)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'.9rem' }}>
+              <div key={f.titre} className={`vcard ${featR.on ? `reveal on reveal-d${Math.min(i+1,3)}` : 'reveal'}`} style={{ padding:'1.2rem' }}>
+                <div style={{ width:38,height:38,borderRadius:10,background:'var(--mint-dim)',color:'var(--mint)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'0.7rem' }}>
                   {f.icon}
                 </div>
-                <h3 className="font-syne" style={{ fontWeight:700, fontSize:'.9rem', marginBottom:'.45rem' }}>{f.titre}</h3>
-                <p style={{ fontSize:'.8rem', color:'var(--slate)', lineHeight:1.6 }}>{f.desc}</p>
+                <h3 className="font-syne" style={{ fontWeight:700, fontSize:'0.85rem', marginBottom:'0.3rem' }}>{f.titre}</h3>
+                <p style={{ fontSize:'0.75rem', color:'var(--slate)', lineHeight:1.5 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══════════ PROCESSUS ══════════ */}
-      <section style={{ padding:'5.5rem 1.5rem', borderTop:'1px solid var(--border)' }} ref={procR.ref}>
+      {/* PROCESSUS */}
+      <section style={{ padding:'3rem 1rem', borderTop:'1px solid var(--border)' }} ref={procR.ref}>
         <div style={{ maxWidth:1040, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:'3rem' }}>
-            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'.7rem' }}>Le processus</div>
-            <h2 className="font-syne" style={{ fontSize:'clamp(1.7rem,3.5vw,2.5rem)', fontWeight:800, letterSpacing:'-.025em' }}>
+          <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'0.5rem' }}>Le processus</div>
+            <h2 className="font-syne" style={{ fontSize:'clamp(1.5rem, 5vw, 2.2rem)', fontWeight:800, letterSpacing:'-.025em' }}>
               De l'idée à la <span className="vgrad">validation</span>
             </h2>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'1rem' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:'1rem' }}>
             {steps.map((s, i) => (
               <div key={s.n}
                 className={`${i===1?'step-active':''} ${procR.on ? `reveal on reveal-d${Math.min(i+1,3)}` : 'reveal'}`}
-                style={{ borderRadius:14, border:'1px solid var(--border)', background:'rgba(20,32,50,.7)', padding:'1.6rem', position:'relative', backdropFilter:'blur(10px)', transition:'border-color .25s' }}>
-                <div className="font-syne" style={{ fontSize:'2.2rem', fontWeight:800, color:'rgba(79,209,197,.13)', lineHeight:1, marginBottom:'.8rem' }}>{s.n}</div>
-                <h3 className="font-syne" style={{ fontWeight:700, fontSize:'.88rem', marginBottom:'.45rem' }}>{s.titre}</h3>
-                <p style={{ fontSize:'.78rem', color:'var(--slate)', lineHeight:1.6 }}>{s.desc}</p>
-                {i < 3 && <ChevronRight size={18} style={{ position:'absolute', right:-10, top:'50%', transform:'translateY(-50%)', color:'var(--mint)', display:'none' }} className="hide-mobile" />}
+                style={{ borderRadius:14, border:'1px solid var(--border)', background:'rgba(20,32,50,.7)', padding:'1.2rem', position:'relative', backdropFilter:'blur(10px)' }}>
+                <div className="font-syne" style={{ fontSize:'1.8rem', fontWeight:800, color:'rgba(79,209,197,.13)', lineHeight:1, marginBottom:'0.5rem' }}>{s.n}</div>
+                <h3 className="font-syne" style={{ fontWeight:700, fontSize:'0.8rem', marginBottom:'0.3rem' }}>{s.titre}</h3>
+                <p style={{ fontSize:'0.7rem', color:'var(--slate)', lineHeight:1.5 }}>{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══════════ COACH IA ══════════ */}
-      <section style={{ padding:'5.5rem 1.5rem', borderTop:'1px solid var(--border)' }}>
+      {/* COACH IA */}
+      <section style={{ padding:'3rem 1rem', borderTop:'1px solid var(--border)' }}>
         <div style={{ maxWidth:680, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:'2.5rem' }}>
-            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'.7rem' }}>Coach IA</div>
-            <h2 className="font-syne" style={{ fontSize:'clamp(1.7rem,3.5vw,2.4rem)', fontWeight:800, letterSpacing:'-.025em' }}>
+          <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
+            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'0.5rem' }}>Coach IA</div>
+            <h2 className="font-syne" style={{ fontSize:'clamp(1.5rem, 5vw, 2rem)', fontWeight:800, letterSpacing:'-.025em' }}>
               Ton mentor <span className="vgrad">24h/24</span>
             </h2>
           </div>
-          <div className="vcard" style={{ padding:'1.6rem' }}>
-            {/* header */}
-            <div style={{ display:'flex', alignItems:'center', gap:'.8rem', marginBottom:'1.2rem', paddingBottom:'1rem', borderBottom:'1px solid var(--border)' }}>
+          <div className="vcard" style={{ padding:'1.2rem' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', marginBottom:'1rem', paddingBottom:'0.8rem', borderBottom:'1px solid var(--border)' }}>
               <div style={{ width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--mint),#68d9d0)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-                <span className="font-syne" style={{ fontSize:'.8rem', fontWeight:800, color:'var(--navy)' }}>V</span>
+                <span className="font-syne" style={{ fontSize:'0.8rem', fontWeight:800, color:'var(--navy)' }}>V</span>
               </div>
               <div>
-                <div className="font-syne" style={{ fontSize:'.85rem', fontWeight:700 }}>Coach Valiquo</div>
-                <div style={{ fontSize:'.68rem', color:'var(--mint)', display:'flex', alignItems:'center', gap:'.3rem' }}>
-                  <span style={{ width:5,height:5,borderRadius:'50%',background:'var(--mint)',display:'block' }} /> En ligne · Disponible 24h/24
+                <div className="font-syne" style={{ fontSize:'0.8rem', fontWeight:700 }}>Coach Valiquo</div>
+                <div style={{ fontSize:'0.6rem', color:'var(--mint)', display:'flex', alignItems:'center', gap:'0.2rem' }}>
+                  <span style={{ width:5,height:5,borderRadius:'50%',background:'var(--mint)',display:'block' }} /> En ligne
                 </div>
               </div>
-              <div style={{ marginLeft:'auto' }}>
-                <button className="vbtn-primary" style={{ fontSize:'.75rem', padding:'.45rem .9rem' }} onClick={() => navigate('scan')}>
-                  Accéder
-                </button>
-              </div>
+              <button className="vbtn-primary" style={{ fontSize:'0.7rem', padding:'0.3rem 0.8rem', marginLeft:'auto' }} onClick={() => navigate('scan')}>Accéder</button>
             </div>
-            {/* messages */}
-            <div style={{ display:'flex', flexDirection:'column', gap:'.75rem', marginBottom:'1rem' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:'0.6rem', marginBottom:'0.8rem' }}>
               {chatMsgs.map((m, i) => (
                 <div key={i} style={{ display:'flex', justifyContent: m.r==='user' ? 'flex-end' : 'flex-start' }}>
-                  <div className={m.r==='ai' ? 'bubble-ai' : 'bubble-user'} style={{ maxWidth:'82%', padding:'.65rem .9rem', fontSize:'.78rem', lineHeight:1.55, color: m.r==='user' ? 'var(--mint)' : 'var(--gray)' }}>
+                  <div className={m.r==='ai' ? 'bubble-ai' : 'bubble-user'} style={{ maxWidth:'85%', padding:'0.5rem 0.7rem', fontSize:'0.7rem', lineHeight:1.4 }}>
                     {m.m}
                   </div>
                 </div>
               ))}
             </div>
-            {/* input mock */}
-            <div style={{ display:'flex', gap:'.6rem', padding:'.7rem', background:'rgba(13,27,42,.5)', borderRadius:9, border:'1px solid var(--border)' }}>
-              <span style={{ flex:1, fontSize:'.78rem', color:'var(--slate)', display:'flex', alignItems:'center' }}>Pose ta question au Coach IA...</span>
-              <button className="vbtn-primary" style={{ fontSize:'.75rem', padding:'.4rem .8rem' }} onClick={() => navigate('scan')}>Envoyer</button>
+            <div style={{ display:'flex', gap:'0.5rem', padding:'0.5rem', background:'rgba(13,27,42,.5)', borderRadius:9, border:'1px solid var(--border)' }}>
+              <span style={{ flex:1, fontSize:'0.7rem', color:'var(--slate)' }}>Pose ta question au Coach IA...</span>
+              <button className="vbtn-primary" style={{ fontSize:'0.7rem', padding:'0.3rem 0.7rem' }} onClick={() => navigate('scan')}>Envoyer</button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════ PRICING ══════════ */}
-      <section id="pricing" style={{ padding:'5.5rem 1.5rem', borderTop:'1px solid var(--border)' }} ref={pricingR.ref}>
+      {/* PRICING */}
+      <section id="pricing" style={{ padding:'3rem 1rem', borderTop:'1px solid var(--border)' }} ref={pricingR.ref}>
         <div style={{ maxWidth:900, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:'3rem' }}>
-            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'.7rem' }}>Tarifs</div>
-            <h2 className="font-syne" style={{ fontSize:'clamp(1.7rem,3.5vw,2.5rem)', fontWeight:800, letterSpacing:'-.025em' }}>
+          <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+            <div className="vlabel" style={{ justifyContent:'center', marginBottom:'0.5rem' }}>Tarifs</div>
+            <h2 className="font-syne" style={{ fontSize:'clamp(1.5rem, 5vw, 2.2rem)', fontWeight:800, letterSpacing:'-.025em' }}>
               Simple et <span className="vgrad">transparent</span>
             </h2>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))', gap:'1.1rem', alignItems:'start' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'1rem', alignItems:'start' }}>
             {plans.map((p, i) => (
               <div key={p.name}
                 className={`${p.featured ? 'plan-featured' : 'vcard'} ${pricingR.on ? `reveal on reveal-d${i+1}` : 'reveal'}`}
-                style={{ borderRadius:16, padding:'1.8rem', position:'relative', backdropFilter:'blur(10px)' }}>
-                {p.featured && (
-                  <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', background:'var(--mint)', color:'var(--navy)', fontSize:'.65rem', fontWeight:700, fontFamily:'Syne,sans-serif', padding:'.25rem .8rem', borderRadius:100, letterSpacing:'.05em' }}>
-                    ⚡ Populaire
-                  </div>
-                )}
-                <div className="font-syne" style={{ fontSize:'.72rem', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--slate)', marginBottom:'.8rem' }}>{p.name}</div>
-                <div style={{ display:'flex', alignItems:'baseline', gap:'.3rem', marginBottom:'.3rem' }}>
-                  <span className="font-syne" style={{ fontSize:p.price==='Sur devis'?'1.5rem':'2.4rem', fontWeight:800, color: p.featured ? 'var(--mint)' : 'var(--white)', letterSpacing:'-.02em' }}>{p.price}</span>
-                  {p.unit && <span style={{ fontSize:'.8rem', color:'var(--slate)' }}>{p.unit}</span>}
+                style={{ borderRadius:16, padding:'1.2rem', position:'relative' }}>
+                {p.featured && <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', background:'var(--mint)', color:'var(--navy)', fontSize:'0.6rem', fontWeight:700, padding:'0.2rem 0.6rem', borderRadius:100 }}>⚡ Populaire</div>}
+                <div className="font-syne" style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--slate)', marginBottom:'0.5rem' }}>{p.name}</div>
+                <div style={{ display:'flex', alignItems:'baseline', gap:'0.2rem', marginBottom:'0.2rem' }}>
+                  <span className="font-syne" style={{ fontSize:p.price==='Sur devis'?'1.2rem':'2rem', fontWeight:800, color: p.featured ? 'var(--mint)' : 'var(--white)' }}>{p.price}</span>
+                  {p.unit && <span style={{ fontSize:'0.7rem', color:'var(--slate)' }}>{p.unit}</span>}
                 </div>
-                <p style={{ fontSize:'.78rem', color:'var(--slate)', lineHeight:1.55, marginBottom:'1.3rem' }}>{p.desc}</p>
-                <div style={{ height:1, background:'var(--border)', marginBottom:'1.2rem' }} />
-                <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:'.55rem', marginBottom:'1.4rem' }}>
+                <p style={{ fontSize:'0.7rem', color:'var(--slate)', marginBottom:'0.8rem' }}>{p.desc}</p>
+                <div style={{ height:1, background:'var(--border)', marginBottom:'0.8rem' }} />
+                <ul style={{ listStyle:'none', marginBottom:'1rem' }}>
                   {p.feats.map(f => (
-                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:'.5rem', fontSize:'.8rem', color:'var(--slate)' }}>
-                      <CheckCircle size={13} style={{ color:'var(--mint)', marginTop:'.1rem', flexShrink:0 }} />
+                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:'0.3rem', fontSize:'0.7rem', color:'var(--slate)', marginBottom:'0.3rem' }}>
+                      <CheckCircle size={12} style={{ color:'var(--mint)', marginTop:'0.1rem', flexShrink:0 }} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button
-                  className={p.featured ? 'vbtn-primary' : 'vbtn-ghost'}
-                  style={{ width:'100%', justifyContent:'center', fontSize:'.85rem' }}
-                  onClick={() => navigate(p.page)}
-                >
-                  {p.cta} <ArrowRight size={14} />
+                <button className={p.featured ? 'vbtn-primary' : 'vbtn-ghost'} style={{ width:'100%', justifyContent:'center', fontSize:'0.75rem', padding:'0.5rem' }} onClick={() => navigate(p.page)}>
+                  {p.cta} <ArrowRight size={12} />
                 </button>
               </div>
             ))}
@@ -758,66 +706,33 @@ export default function Landing({ navigate }: LandingProps) {
         </div>
       </section>
 
-      {/* ══════════ CTA FINAL ══════════ */}
-      <section style={{ padding:'5.5rem 1.5rem', borderTop:'1px solid var(--border)' }}>
+      {/* CTA FINAL */}
+      <section style={{ padding:'3rem 1rem', borderTop:'1px solid var(--border)' }}>
         <div style={{ maxWidth:780, margin:'0 auto' }}>
-          <div style={{ borderRadius:24, padding:'4rem 2.5rem', textAlign:'center', background:'linear-gradient(135deg,rgba(79,209,197,.07),rgba(99,102,241,.05))', border:'1px solid rgba(79,209,197,.18)', position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 50% 0%,rgba(79,209,197,.12),transparent 65%)', pointerEvents:'none' }} />
-            <div style={{ position:'relative', zIndex:1 }}>
-              <div style={{ width:60,height:60,borderRadius:16,background:'rgba(79,209,197,.13)',color:'var(--mint)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1.5rem' }}>
-                <Rocket size={26} />
-              </div>
-              <h2 className="font-syne" style={{ fontSize:'clamp(1.8rem,4vw,3rem)', fontWeight:800, letterSpacing:'-.025em', marginBottom:'.8rem' }}>
-                Prouve que ton idée<br/><span className="vgrad">mérite d'exister.</span>
-              </h2>
-              <p style={{ color:'var(--slate)', fontSize:'.9rem', marginBottom:'2rem', lineHeight:1.65 }}>
-                Rejoins les entrepreneurs marocains qui valident avant de construire.<br/>Gratuit · Sans carte bancaire · Résultats en 5 min.
-              </p>
-              <div className="stack-mobile" style={{ display:'flex', gap:'.8rem', justifyContent:'center' }}>
-                <button className="vbtn-primary anim-pulse-glow" style={{ fontSize:'.95rem', padding:'.85rem 2rem' }} onClick={() => navigate('scan')}>
-                  <Zap size={17} /> Scanner mon idée maintenant
-                </button>
-                <div style={{ display:'flex', alignItems:'center', gap:'.5rem', fontSize:'.78rem', color:'var(--slate)' }}>
-                  <Users size={14} /><span>1 240+ entrepreneurs inscrits</span>
-                </div>
+          <div style={{ borderRadius:24, padding:'2rem 1.5rem', textAlign:'center', background:'linear-gradient(135deg,rgba(79,209,197,.07),rgba(99,102,241,.05))', border:'1px solid rgba(79,209,197,.18)' }}>
+            <div style={{ width:50,height:50,borderRadius:16,background:'rgba(79,209,197,.13)',color:'var(--mint)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1rem' }}>
+              <Rocket size={24} />
+            </div>
+            <h2 className="font-syne" style={{ fontSize:'clamp(1.4rem, 5vw, 2rem)', fontWeight:800, marginBottom:'0.5rem' }}>
+              Prouve que ton idée<br/><span className="vgrad">mérite d'exister.</span>
+            </h2>
+            <p style={{ color:'var(--slate)', fontSize:'0.85rem', marginBottom:'1.5rem', lineHeight:1.5 }}>
+              Rejoins les entrepreneurs marocains qui valident avant de construire.<br/>Gratuit · Sans carte bancaire · Résultats en 5 min.
+            </p>
+            <div style={{ display:'flex', gap:'1rem', justifyContent:'center', flexWrap:'wrap' }}>
+              <button className="vbtn-primary" style={{ fontSize:'0.85rem', padding:'0.7rem 1.2rem' }} onClick={() => navigate('scan')}>
+                <Zap size={16} /> Scanner mon idée maintenant
+              </button>
+              <div style={{ display:'flex', alignItems:'center', gap:'0.3rem', fontSize:'0.7rem', color:'var(--slate)' }}>
+                <Users size={14} /><span>1 240+ entrepreneurs inscrits</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════ FOOTER ══════════ */}
-      <footer style={{ borderTop:'1px solid var(--border)', padding:'2.5rem 1.5rem', maxWidth:1040, margin:'0 auto', display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:'2rem' }}>
-        <div>
-          <div className="font-syne" style={{ fontWeight:800, fontSize:'1.1rem', marginBottom:'.7rem' }}>
-            Vali<span style={{ color:'var(--mint)' }}>quo</span>
-          </div>
-          <p style={{ fontSize:'.78rem', color:'var(--slate)', lineHeight:1.65, maxWidth:220 }}>
-            La plateforme qui transforme les frustrations du quotidien en opportunités business validées pour les entrepreneurs marocains.
-          </p>
-        </div>
-        {[
-          { h:'Produit', links:['Fonctionnalités','Tarifs','Coach IA','Partenaires'] },
-          { h:'Ressources', links:['Blog','Guides','Centre d\'aide'] },
-          { h:'Légal', links:['Confidentialité','CGU','Contact'] },
-        ].map(col => (
-          <div key={col.h}>
-            <div className="font-syne" style={{ fontSize:'.7rem', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:'.9rem', color:'var(--white)' }}>{col.h}</div>
-            <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:'.5rem' }}>
-              {col.links.map(l => (
-                <li key={l}><a href="#" style={{ fontSize:'.78rem', color:'var(--slate)', textDecoration:'none', transition:'color .2s' }}
-                  onMouseEnter={e=>(e.currentTarget.style.color='var(--mint)')}
-                  onMouseLeave={e=>(e.currentTarget.style.color='var(--slate)')}>{l}</a></li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </footer>
-      <div style={{ borderTop:'1px solid var(--border)', padding:'1.2rem 1.5rem', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'.5rem' }}>
-        <p style={{ fontSize:'.72rem', color:'var(--slate)' }}>© 2026 Valiquo · Casablanca, Maroc</p>
-        <p style={{ fontSize:'.72rem', color:'var(--slate)' }}>contact@valiquo.ma</p>
-      </div>
-
+    
+     
     </div>
   );
 }
