@@ -1,4 +1,4 @@
-import { ScanResult, Badge } from '../types';
+import { ScanResult, Badge, CustomerSegment, MarketSize, Habit, CollectionMethod } from '../types';
 
 const forcesByContext: Record<string, string[]> = {
   tech: [
@@ -159,7 +159,119 @@ function getContexte(ville: string, secteur: string, score: number): string {
   return villeContext[ville] || villeContext['National'];
 }
 
-export function simulateScan(problem: string, ville: string, secteur: string): ScanResult {
+function getClientsAnalysis(problem: string, ville: string, secteur: string, ctx: string, additionalInfo?: string) {
+  const isTangerHomemade = problem.toLowerCase().includes('plats') && problem.toLowerCase().includes('voisins') && ville === 'Tanger';
+  
+  let baseAnalysis;
+
+  if (isTangerHomemade) {
+    baseAnalysis = {
+      segments: [
+        {
+          nom: 'Jeunes actifs célibataires',
+          age: '25-35 ans',
+          revenu: '7 000 - 12 000 DHS',
+          localisation: 'Centre-ville, Tanger City Center',
+          besoin: 'Manger sainement sans avoir le temps de cuisiner après le travail.'
+        },
+        {
+          nom: 'Étudiants en colocation',
+          age: '18-24 ans',
+          revenu: '2 000 - 4 000 DHS (Budget parents)',
+          localisation: 'Quartier Boukhalef, zones universitaires',
+          besoin: 'Repas faits maison à prix abordable, alternative aux fast-foods.'
+        },
+        {
+          nom: 'Seniors vivant seuls',
+          age: '65 ans+',
+          revenu: 'Variable (Retraite)',
+          localisation: 'Quartiers historiques (Marshan, Kasbah)',
+          besoin: 'Lien social et accès à des repas équilibrés sans effort physique.'
+        }
+      ],
+      marche: {
+        tam: '1.2M d\'habitants à Tanger (Potentiel global)',
+        sam: '350 000 urbains connectés (Utilisateurs smartphone)',
+        som: '15 000 à 25 000 utilisateurs (Cible initiale sur 3 quartiers clés)'
+      },
+      comportements: [
+        {
+          titre: 'Confiance et Bouche-à-oreille',
+          description: 'À Tanger, la réputation est clé. Les utilisateurs testeront via recommandation de voisins.'
+        },
+        {
+          titre: 'Sensibilité au prix',
+          description: 'Forte attente d\'un rapport qualité/prix supérieur à la restauration rapide classique.'
+        },
+        {
+          titre: 'Mode de paiement',
+          description: 'Préférence pour le cash à la livraison (COD), avec une transition lente vers le digital.'
+        }
+      ],
+      collecte: [
+        {
+          methode: 'Questionnaires Google Forms',
+          description: 'Diffusés dans les groupes Facebook de quartiers de Tanger.'
+        },
+        {
+          methode: 'Entretiens terrain',
+          description: 'Discussions avec des gardiens d\'immeubles et syndics pour comprendre les besoins.'
+        },
+        {
+          methode: 'Open Data HCP',
+          description: 'Analyse de la pyramide des âges et de la taille des ménages à Tanger-Assilah.'
+        }
+      ]
+    };
+  } else {
+    // Default analysis based on context
+    const defaultSegments: Record<string, CustomerSegment[]> = {
+      tech: [
+        { nom: 'Early Adopters', age: '18-35 ans', revenu: '8 000+ DHS', localisation: 'Grandes villes', besoin: 'Innovation et gain de temps.' },
+        { nom: 'PME en digitalisation', age: '30-50 ans (Décideurs)', revenu: 'CA > 1M DHS', localisation: 'Zones industrielles', besoin: 'Optimisation des processus.' }
+      ],
+      food: [
+        { nom: 'Urbains pressés', age: '22-45 ans', revenu: '6 000+ DHS', localisation: 'Quartiers d\'affaires', besoin: 'Repas rapides et de qualité.' },
+        { nom: 'Familles modernes', age: '30-50 ans', revenu: '12 000+ DHS (Foyer)', localisation: 'Zones résidentielles', besoin: 'Commodité et santé.' }
+      ],
+      default: [
+        { nom: 'Classe moyenne urbaine', age: '25-50 ans', revenu: '5 000 - 15 000 DHS', localisation: 'Villes principales', besoin: 'Amélioration du quotidien.' },
+        { nom: 'Jeunes diplômés', age: '22-30 ans', revenu: '4 000 - 8 000 DHS', localisation: 'Centres urbains', besoin: 'Accessibilité et modernité.' }
+      ]
+    };
+
+    const defaultMarche: Record<string, MarketSize> = {
+      tech: { tam: '37M (Population Maroc)', sam: '22M (Internautes)', som: '500k - 1M (Cible qualifiée)' },
+      food: { tam: '37M (Consommateurs)', sam: '10M (Urbains)', som: '100k - 300k (Cible locale)' },
+      default: { tam: '37M (Maroc)', sam: '15M (Actifs)', som: '50k - 150k (Niche)' }
+    };
+
+    baseAnalysis = {
+      segments: defaultSegments[ctx] || defaultSegments.default,
+      marche: defaultMarche[ctx] || defaultMarche.default,
+      comportements: [
+        { titre: 'Prix', description: 'Le consommateur marocain est très sensible au rapport qualité-prix.' },
+        { titre: 'Confiance', description: 'Le contact humain et le service client sont primordiaux pour instaurer la confiance.' }
+      ],
+      collecte: [
+        { methode: 'Sondages en ligne', description: 'Rapide et économique pour tester l\'intérêt.' },
+        { methode: 'HCP / Open Data', description: 'Sources officielles pour valider la taille du segment.' }
+      ]
+    };
+  }
+
+  // Add additional info if provided
+  if (additionalInfo && additionalInfo.trim()) {
+    baseAnalysis.comportements.push({
+      titre: 'Observations de l\'entrepreneur',
+      description: additionalInfo
+    });
+  }
+
+  return baseAnalysis;
+}
+
+export function simulateScan(problem: string, ville: string, secteur: string, additionalInfo?: string): ScanResult {
   const ctx = detectContext(problem, secteur);
   const score = computeScore(problem, ville);
 
@@ -180,6 +292,7 @@ export function simulateScan(problem: string, ville: string, secteur: string): S
       menaces: menaces.map(text => ({ text })),
     },
     contexte: getContexte(ville, secteur, score),
+    clients: getClientsAnalysis(problem, ville, secteur, ctx, additionalInfo),
     plan: [
       {
         step: 1,

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Zap, MapPin, Briefcase, ArrowRight, Copy, RotateCcw,
   Clock, CheckCircle, TrendingUp, Shield, AlertTriangle, Target,
-  ChevronDown, History, User, LogIn
+  ChevronDown, History, User, LogIn, Users, BarChart3, Database
 } from 'lucide-react';
 import { simulateScan } from '../lib/scanSimulator';
 import { supabase } from '../lib/supabase';
@@ -140,6 +140,100 @@ function ScanResultView({ result, problem, onReset, onCopy, onNavigate }: ScanRe
         <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{result.contexte}</p>
       </div>
 
+      {result.clients && (
+        <div className="card p-6">
+          <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
+            <Users size={16} style={{ color: 'var(--accent)' }} />
+            Clients et consommateurs potentiels
+          </h3>
+          
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Segmentation</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {result.clients.segments.map((seg, i) => (
+                  <div key={i} className="p-4 rounded-xl border border-[var(--border)] bg-[rgba(15,23,42,0.3)]">
+                    <h4 className="text-xs font-bold mb-2 text-[var(--accent)]">{seg.nom}</h4>
+                    <div className="space-y-1">
+                      <p className="text-[10px] flex justify-between"><span style={{ color: 'var(--text-secondary)' }}>Âge:</span> <span>{seg.age}</span></p>
+                      <p className="text-[10px] flex justify-between"><span style={{ color: 'var(--text-secondary)' }}>Revenu:</span> <span>{seg.revenu}</span></p>
+                      <p className="text-[10px] flex justify-between"><span style={{ color: 'var(--text-secondary)' }}>Lieu:</span> <span>{seg.localisation}</span></p>
+                      <div className="mt-2 pt-2 border-t border-[var(--border)]">
+                        <p className="text-[10px] font-medium leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                          <span className="text-[var(--accent)] mr-1">Besoin:</span> {seg.besoin}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <p className="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                  <BarChart3 size={12} /> Taille du marché (Estimation)
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[rgba(45,212,191,0.1)] flex items-center justify-center text-[10px] font-bold text-[var(--accent)]">TAM</div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold">Marché Total</p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{result.clients.marche.tam}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[rgba(96,165,250,0.1)] flex items-center justify-center text-[10px] font-bold text-[#60A5FA]">SAM</div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold">Marché Adressable</p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{result.clients.marche.sam}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[rgba(251,176,36,0.1)] flex items-center justify-center text-[10px] font-bold text-[#FBB024]">SOM</div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold">Marché Cible</p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{result.clients.marche.som}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                  <TrendingUp size={12} /> Habitudes d&apos;achat
+                </p>
+                <div className="space-y-3">
+                  {result.clients.comportements.map((habit, i) => (
+                    <div key={i}>
+                      <p className="text-[10px] font-bold mb-0.5">{habit.titre}</p>
+                      <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{habit.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                <Database size={12} /> Méthodes de collecte recommandées
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {result.clients.collecte.map((col, i) => (
+                  <div key={i} className="flex gap-3 items-start">
+                    <CheckCircle size={12} className="mt-0.5 text-[var(--accent)] flex-shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-bold">{col.methode}</p>
+                      <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{col.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="card p-6">
         <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
           <Target size={16} style={{ color: 'var(--accent)' }} />
@@ -251,6 +345,7 @@ export default function ScanPage({ navigate, user }: ScanProps) {
   const [problem, setProblem] = useState('');
   const [ville, setVille] = useState('National');
   const [secteur, setSecteur] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [loaderStep, setLoaderStep] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -288,7 +383,7 @@ export default function ScanPage({ navigate, user }: ScanProps) {
     clearInterval(stepInterval);
     setLoaderStep(LOADER_STEPS.length - 1);
 
-    const scanResult = simulateScan(problem, ville, secteur);
+    const scanResult = simulateScan(problem, ville, secteur, additionalInfo);
     setResult(scanResult);
     setLoading(false);
 
@@ -321,6 +416,7 @@ export default function ScanPage({ navigate, user }: ScanProps) {
     setProblem('');
     setVille('National');
     setSecteur('');
+    setAdditionalInfo('');
     setCurrentScanId(undefined);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -348,6 +444,23 @@ export default function ScanPage({ navigate, user }: ScanProps) {
       `CONTEXTE MARCHÉ:`,
       result.contexte,
       ``,
+      ...(result.clients ? [
+        `CLIENTS ET CONSOMMATEURS POTENTIELS:`,
+        `--- Segmentation ---`,
+        ...result.clients.segments.map(s => `• ${s.nom} (${s.age}, ${s.revenu}, ${s.localisation}): ${s.besoin}`),
+        ``,
+        `--- Marché ---`,
+        `TAM: ${result.clients.marche.tam}`,
+        `SAM: ${result.clients.marche.sam}`,
+        `SOM: ${result.clients.marche.som}`,
+        ``,
+        `--- Comportements ---`,
+        ...result.clients.comportements.map(c => `• ${c.titre}: ${c.description}`),
+        ``,
+        `--- Collecte ---`,
+        ...result.clients.collecte.map(c => `• ${c.methode}: ${c.description}`),
+        ``
+      ] : []),
       `PLAN D'ACTION:`,
       ...result.plan.map(p => `${p.step}. ${p.titre}\n   ${p.description}`),
     ].join('\n');
@@ -436,6 +549,25 @@ export default function ScanPage({ navigate, user }: ScanProps) {
                     Minimum 20 caractères pour une analyse précise.
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="text-xs font-medium mb-2 block" htmlFor="info-input">
+                  Informations complémentaires sur tes clients <span style={{ color: 'var(--text-secondary)' }}>(optionnel)</span>
+                </label>
+                <textarea
+                  id="info-input"
+                  value={additionalInfo}
+                  onChange={e => setAdditionalInfo(e.target.value)}
+                  placeholder="Ex: Mes clients sont principalement des femmes actives, elles préfèrent payer par carte, elles commandent surtout le soir..."
+                  className="input resize-none leading-relaxed"
+                  rows={3}
+                  maxLength={400}
+                  style={{ fontSize: '0.875rem' }}
+                />
+                <p className="text-[10px] mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  Ces informations aideront l'IA à affiner la segmentation.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -29,6 +29,30 @@ export interface Badge {
   type: 'positive' | 'warning' | 'negative';
 }
 
+export interface CustomerSegment {
+  nom: string;
+  age: string;
+  revenu: string;
+  localisation: string;
+  besoin: string;
+}
+
+export interface MarketSize {
+  tam: string;
+  sam: string;
+  som: string;
+}
+
+export interface Habit {
+  titre: string;
+  description: string;
+}
+
+export interface CollectionMethod {
+  methode: string;
+  description: string;
+}
+
 export interface ScanResult {
   score: number;
   verdict: string;
@@ -37,6 +61,12 @@ export interface ScanResult {
   swot: Swot;
   contexte: string;
   plan: ActionStep[];
+  clients?: {
+    segments: CustomerSegment[];
+    marche: MarketSize;
+    comportements: Habit[];
+    collecte: CollectionMethod[];
+  };
 }
 
 export interface Scan {
