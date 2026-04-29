@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   LayoutDashboard, FolderKanban, MessageSquare, BarChart3, ClipboardList, FileText,
-  Users, Zap, TrendingUp, MessageCircle, User, LogOut, Send, PlusCircle, ChevronRight, Calendar
+  Users, Zap, TrendingUp, MessageCircle, User, LogOut, Send, PlusCircle, ChevronRight, Calendar, Menu, X
 } from 'lucide-react';
 
 // Types
@@ -152,6 +152,7 @@ const CoachChat = () => {
 export default function Dashboard({ navigate, user, onSignOut }: DashboardProps) {
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [activeTab, setActiveTab] = useState('projects');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Calcul des statistiques
   const totalProjects = projects.length;
@@ -171,7 +172,7 @@ export default function Dashboard({ navigate, user, onSignOut }: DashboardProps)
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
+      {/* Sidebar Desktop */}
       <aside className="w-64 fixed inset-y-0 left-0 z-20 hidden lg:flex flex-col border-r" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div className="p-6">
           <h1 className="text-xl font-bold" style={{ fontFamily: 'Syne', color: 'var(--accent)' }}>Valiquo</h1>
@@ -206,22 +207,91 @@ export default function Dashboard({ navigate, user, onSignOut }: DashboardProps)
         </div>
       </aside>
 
+      {/* Sidebar Mobile */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 flex-col border-r transform transition-transform duration-300 ease-in-out lg:hidden ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`} style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        <div className="p-6 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold" style={{ fontFamily: 'Syne', color: 'var(--accent)' }}>Valiquo</h1>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Copilote entrepreneur</p>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+        <nav className="flex-1 px-4 space-y-1 py-4">
+          {[
+            { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+            { id: 'projects', label: 'Mes projets', icon: FolderKanban },
+            { id: 'coach', label: 'Coach IA', icon: MessageCircle },
+            { id: 'analyses', label: 'Analyses', icon: BarChart3 },
+            { id: 'questionnaires', label: 'Questionnaires', icon: ClipboardList },
+            { id: 'reports', label: 'Rapports', icon: FileText },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                activeTab === item.id ? 'bg-accent/10 text-accent' : 'hover:bg-white/5'
+              }`}
+              style={{ color: activeTab === item.id ? 'var(--accent)' : 'var(--text-secondary)' }}
+            >
+              <item.icon size={18} />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t" style={{ borderColor: 'var(--border)' }}>
+          <button onClick={onSignOut} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10">
+            <LogOut size={18} /> Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* Overlay Mobile */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Contenu principal */}
       <main className="lg:ml-64 flex-1 p-6 md:p-8 pt-24">
         <div className="max-w-7xl mx-auto">
           {/* En-tête */}
-          <div className="flex justify-between items-center mb-16">
-            <div>
-              <h1 className="text-2xl font-bold" style={{ fontFamily: 'Syne' }}>Bonjour {currentUser.name.split(' ')[0]}</h1>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Voici un aperçu de tes projets et de leur validation.</p>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 lg:mb-12">
+            <div className="flex items-center gap-3">
+              {/* Menu Hamburger Mobile */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <Menu size={20} />
+              </button>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Syne' }}>Bonjour {currentUser.name.split(' ')[0]}</h1>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Voici un aperçu de tes projets et de leur validation.</p>
+              </div>
             </div>
-            <button className="btn-primary text-sm py-2 px-4">
+            <button className="btn-primary text-sm py-2 px-4 whitespace-nowrap">
               <PlusCircle size={16} /> Nouveau projet
             </button>
           </div>
 
-          {/* Cartes stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Cartes stats avec marge responsive */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 mt-8 lg:mt-16">
             <div className="card p-4">
               <div className="flex justify-between items-start">
                 <div>
