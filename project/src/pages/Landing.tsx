@@ -1,228 +1,276 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, BarChart3, Target, ClipboardList, MapPin, MessageCircle, History, ChevronRight, Menu, X } from 'lucide-react';
+import { Zap, FileText, Scale, BarChart3, Database, ChevronRight, Menu, X, Send, CheckCircle2, Coins, ArrowRight } from 'lucide-react';
+import { LuLayers } from '../lib/icons';
 
-const features = [
-  { icon: BarChart3, title: 'Score IA', desc: 'Évaluation automatisée de la viabilité de ton idée sur 100 points' },
-  { icon: Target, title: 'Analyse SWOT', desc: 'Forces, faiblesses, opportunités et menaces identifiées par IA' },
-  { icon: ClipboardList, title: "Plan d'action", desc: 'Étapes concrètes et timeline pour valider ton idée terrain' },
-  { icon: MapPin, title: 'Contexte marocain', desc: 'Données adaptées au marché local, villes et secteurs clés' },
-  { icon: MessageCircle, title: 'Coach IA', desc: 'Pose tes questions et reçois des conseils personnalisés 24/7' },
-  { icon: History, title: 'Historique', desc: 'Sauvegarde et suis tes analyses au fil du temps' },
+const modules = [
+  { version: 'V1', status: 'DISPONIBLE', title: 'Module Réglementaire', desc: 'Création d\'entreprise, statuts juridiques, fiscalité', icon: Scale },
+  { version: 'V2', status: 'BIENTÔT', title: 'Module Financement', desc: 'Maroc PME, Innov Invest, CCG', icon: Coins },
+  { version: 'V3', status: 'ROADMAP', title: 'Module Sectoriel', desc: 'Études de marché par secteur', icon: BarChart3 },
+  { version: 'V4', status: 'ROADMAP', title: 'Module Données', desc: 'HCP, Bank Al-Maghrib, statistiques', icon: Database },
 ];
 
-const steps = [
-  { n: '01', title: 'Décris ton idée', desc: 'Explique le problème que tu veux résoudre et pour qui' },
-  { n: '02', title: 'Lance le scan', desc: "L'IA analyse la demande, le marché et la concurrence au Maroc" },
-  { n: '03', title: 'Explore ton rapport', desc: 'Score, SWOT, segments, plan d\'action — tout est là' },
-  { n: '04', title: 'Agis avec confiance', desc: 'Valide sur le terrain avec un plan clair et des données solides' },
+const problems = [
+  { icon: LuLayers, title: 'Lois complexes', desc: 'Le cadre légal marocain évolue constamment et reste difficile à interpréter sans expert' },
+  { icon: Coins, title: 'Consultants trop chers', desc: 'Un avocat ou expert-comptable coûte 500 à 2 000 MAD de l\'heure' },
+  { icon: FileText, title: 'Informations dispersées', desc: 'OMPIC, DGI, CRI, CNSS — les démarches sont éparpillées entre dizaines de sources' },
 ];
 
 const plans = [
-  { name: 'Starter', price: 'Gratuit', period: '', features: ['3 scans / mois', 'Score IA basique', 'SWOT simplifié', 'Sans sauvegarde'], cta: 'Commencer', highlight: false },
-  { name: 'Pro', price: '199 MAD', period: '/mois', features: ['Scans illimités', 'Score IA avancé', 'SWOT complet', 'Coach IA', 'Historique & rapports', 'Segments & TAM/SAM/SOM'], cta: 'Scanner mon idée', highlight: true },
-  { name: 'Écosystème', price: 'Sur devis', period: '', features: ['Tout le plan Pro', 'Accès API', 'Multi-utilisateurs', 'Rapports personnalisés', 'Support dédié'], cta: 'Nous contacter', highlight: false },
+  { name: 'Starter', price: 'Gratuit', period: '', features: ['3 consultations/mois', 'Coach IA basique', 'Accès module réglementaire', 'Sources officielles'], cta: 'Commencer gratuitement', highlight: false },
+  { name: 'Pro', price: '199 MAD', period: '/mois', features: ['Consultations illimitées', 'Coach IA avancé', 'Export PDF', 'Historique complet', 'Support prioritaire'], cta: 'Essayer 14 jours gratuits', highlight: true },
+  { name: 'Écosystème', price: 'Sur devis', period: '', features: ['Multi-utilisateurs', 'API dédiée', 'Support dédié', 'Rapports personnalisés', 'Formation équipe'], cta: 'Nous contacter', highlight: false },
 ];
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [demoText, setDemoText] = useState('');
 
   return (
-    <div className="min-h-screen bg-slate-950 font-inter">
+    <div className="min-h-screen bg-slate-950 font-inter zellige-overlay">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Zap className="w-6 h-6 text-turquoise" />
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-turquoise rounded-lg flex items-center justify-center">
+              <Zap className="w-4 h-4 text-slate-950" />
+            </div>
             <span className="font-syne font-800 text-xl text-white">Valiquo</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-slate-400 hover:text-white transition text-sm">Fonctionnalités</a>
-            <a href="#pricing" className="text-slate-400 hover:text-white transition text-sm">Tarifs</a>
-            <a href="#contact" className="text-slate-400 hover:text-white transition text-sm">Contact</a>
+            <a href="#modules" className="text-slate-400 hover:text-white transition text-sm font-medium">Modules</a>
+            <a href="#pricing" className="text-slate-400 hover:text-white transition text-sm font-medium">Tarifs</a>
+            <a href="#contact" className="text-slate-400 hover:text-white transition text-sm font-medium">Contact</a>
           </div>
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/login" className="text-sm text-slate-300 hover:text-white transition px-4 py-2">Connexion</Link>
-            <Link to="/scan" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-medium text-sm px-5 py-2.5 rounded-lg transition">Scanner mon idée</Link>
+            <Link to="/login" className="text-sm text-slate-300 hover:text-white transition px-4 py-2 font-medium">Connexion</Link>
+            <Link to="/scan" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold text-sm px-5 py-2.5 rounded-lg transition">Poser ma question</Link>
           </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-white">
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-white p-2">
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
         {menuOpen && (
           <div className="md:hidden bg-slate-900 border-t border-slate-800 px-4 py-4 space-y-3">
-            <a href="#features" className="block text-slate-300 text-sm">Fonctionnalités</a>
-            <a href="#pricing" className="block text-slate-300 text-sm">Tarifs</a>
-            <a href="#contact" className="block text-slate-300 text-sm">Contact</a>
-            <Link to="/login" className="block text-slate-300 text-sm">Connexion</Link>
-            <Link to="/scan" className="block bg-turquoise text-slate-950 font-medium text-sm px-4 py-2 rounded-lg text-center">Scanner mon idée</Link>
+            <a href="#modules" className="block text-slate-300 text-sm font-medium py-2">Modules</a>
+            <a href="#pricing" className="block text-slate-300 text-sm font-medium py-2">Tarifs</a>
+            <a href="#contact" className="block text-slate-300 text-sm font-medium py-2">Contact</a>
+            <Link to="/login" className="block text-slate-300 text-sm font-medium py-2">Connexion</Link>
+            <Link to="/scan" className="block bg-turquoise text-slate-950 font-semibold text-sm px-4 py-3 rounded-lg text-center">Poser ma question</Link>
           </div>
         )}
       </nav>
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 600px 400px at 50% 0%, rgba(45,212,191,0.08), transparent)' }} />
-        <div className="max-w-4xl mx-auto text-center relative">
-          <h1 className="font-syne font-800 text-4xl sm:text-5xl md:text-6xl leading-tight text-white mb-6">
-            Prouve la demande.{' '}
+      {/* Hero Section */}
+      <section className="pt-28 pb-24 px-4 sm:px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-geometric-glow pointer-events-none" />
+        <div className="max-w-5xl mx-auto relative">
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 bg-slate-900/80 border border-slate-700/50 rounded-full px-4 py-1.5 text-xs text-slate-300">
+              <span className="text-base">🇲🇦</span>
+              <span className="font-medium">RÉGLEMENTATION MAROCAINE</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-turquoise font-medium">IA SPÉCIALISÉE</span>
+              <span className="text-slate-600">·</span>
+              <span className="bg-turquoise/20 text-turquoise px-2 py-0.5 rounded-full">BÊTA OUVERTE</span>
+            </div>
+          </div>
+          <h1 className="font-syne font-800 text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.1] text-center mb-6">
+            <span className="text-white">Comprends le cadre.</span>
+            <br />
             <span className="text-turquoise">Avant de te lancer.</span>
           </h1>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-8">
-            Valiquo scanne ton idée de business en 5 minutes et te donne un score de viabilité, une analyse SWOT et un plan d'action adapté au marché marocain.
+          <p className="text-slate-400 text-lg sm:text-xl max-w-3xl mx-auto text-center mb-10 leading-relaxed">
+            Valiquo analyse ta question réglementaire en 5 minutes — procédures officielles, obligations légales et plan d'action concret basé sur les textes marocains en vigueur.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/scan" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-medium px-8 py-3.5 rounded-lg text-base transition inline-flex items-center justify-center gap-2">
-              Scanner mon idée <ChevronRight className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+            <Link to="/scan" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold px-8 py-4 rounded-xl text-base transition inline-flex items-center justify-center gap-2 shadow-lg shadow-turquoise/20">
+              Poser ma question gratuitement <ChevronRight className="w-5 h-5" />
             </Link>
-            <a href="#demo" className="border border-slate-700 hover:border-slate-500 text-white px-8 py-3.5 rounded-lg text-base transition inline-flex items-center justify-center">
-              Voir la démo
+            <a href="#demo" className="border border-slate-600 hover:border-slate-500 text-white font-medium px-8 py-4 rounded-xl text-base transition inline-flex items-center justify-center">
+              Voir une démo
             </a>
+          </div>
+          <p className="text-center text-slate-500 text-sm">
+            100% gratuit · Résultats en 5 min · Aucune carte bancaire
+          </p>
+        </div>
+      </section>
+
+      {/* Mock Result Card */}
+      <section className="pb-24 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="bg-slate-800/50 border-b border-slate-700/50 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-turquoise" />
+                <span className="font-syne font-700 text-white">CRÉATION SARL · CASABLANCA</span>
+              </div>
+              <span className="text-xs bg-turquoise/10 text-turquoise px-3 py-1 rounded-full font-medium">RÉGLEMENTATION</span>
+            </div>
+            <div className="p-6 lg:p-8">
+              <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <FileText className="w-4 h-4 text-turquoise" />
+                    <span className="font-medium">Textes officiels analysés</span>
+                  </div>
+                  <div className="space-y-2">
+                    {['Loi 5-96 sur les SARL', 'CGI 2024', 'Guide OMPIC'].map((t) => (
+                      <div key={t} className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300">{t}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-slate-400 mb-4">Points clés</h4>
+                  {[
+                    { label: 'Capital minimum', value: '1 MAD (depuis 2018)' },
+                    { label: 'Associés', value: '1 à 50 personnes' },
+                    { label: 'Délai moyen', value: '72h via CRI Casablanca' },
+                    { label: 'Coût estimé', value: '1 000 à 3 000 MAD' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-turquoise shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <span className="text-slate-400">{item.label}:</span>{' '}
+                        <span className="text-white font-medium">{item.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-slate-400 mb-4">Plan d'action 3 étapes</h4>
+                  {[
+                    { step: 1, title: 'Rédiger les statuts', timeline: '1-2 jours' },
+                    { step: 2, title: 'Déposer au CRI', timeline: '1-3 jours' },
+                    { step: 3, title: 'Immatriculation OMPIC', timeline: '24h' },
+                  ].map((s) => (
+                    <div key={s.step} className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-full bg-turquoise/20 text-turquoise flex items-center justify-center text-xs font-bold">{s.step}</div>
+                      <div className="flex-1">
+                        <div className="text-sm text-white font-medium">{s.title}</div>
+                        <div className="text-xs text-slate-500">{s.timeline}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-800/30 border-t border-slate-700/30 px-6 py-3 flex flex-wrap gap-2">
+              {['Validé', 'SARL', 'Casablanca', '2024'].map((t) => (
+                <span key={t} className="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full">{t}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Stats bar */}
-      <section className="border-y border-slate-800/60 bg-slate-900/40">
-        <div className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      {/* Stats Bar */}
+      <section className="border-y border-slate-800/60 bg-slate-900/30">
+        <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
-            ['90%', 'startups échouent'],
-            ['5 min', 'par analyse'],
-            ['0 MAD', 'pour commencer'],
-            ['1240+', 'signaux analysés'],
-          ].map(([val, label]) => (
-            <div key={val}>
-              <div className="font-syne font-700 text-2xl text-turquoise">{val}</div>
-              <div className="text-slate-500 text-sm mt-1">{label}</div>
+            { value: '50+', label: 'textes officiels analysés' },
+            { value: '5 min', label: 'par consultation' },
+            { value: '0 MAD', label: 'pour commencer' },
+            { value: '100%', label: 'sources officielles marocaines' },
+          ].map((stat) => (
+            <div key={stat.value}>
+              <div className="font-syne font-800 text-2xl sm:text-3xl text-turquoise">{stat.value}</div>
+              <div className="text-slate-500 text-sm mt-1">{stat.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Mock result card */}
-      <section className="py-20 px-4 sm:px-6">
-        <div className="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl shadow-turquoise/5">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-slate-500">Casablanca · Logistique</span>
-            <span className="text-xs bg-turquoise/10 text-turquoise px-2 py-1 rounded-full">Forte demande</span>
-          </div>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative w-16 h-16">
-              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#1E293B" strokeWidth="8" />
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#2DD4BF" strokeWidth="8" strokeDasharray={`${78 * 2.83} 283`} strokeLinecap="round" />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-syne font-700 text-lg text-white">78</span>
-            </div>
-            <div>
-              <div className="text-white font-medium">Score de viabilité</div>
-              <div className="text-slate-500 text-sm">78/100 — Bonne opportunité</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg">+ Forces: 4</div>
-            <div className="bg-red-500/10 text-red-400 p-2 rounded-lg">- Faiblesses: 2</div>
-            <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">+ Opportunités: 3</div>
-            <div className="bg-amber-500/10 text-amber p-2 rounded-lg">! Menaces: 2</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why projects fail */}
-      <section className="py-20 px-4 sm:px-6">
+      {/* Problem Section */}
+      <section className="py-24 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <h2 className="font-syne font-700 text-3xl text-white text-center mb-4">Pourquoi tant de projets échouent ?</h2>
-          <p className="text-slate-400 text-center mb-12 max-w-2xl mx-auto">Au Maroc, 9 startups sur 10 ne survivent pas. La cause principale : lancer sans valider la demande.</p>
+          <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white text-center mb-4">Pourquoi les entrepreneurs marocains échouent ?</h2>
+          <p className="text-slate-400 text-center mb-14 max-w-2xl mx-auto">Le cadre réglementaire marocain est riche mais complexe. Valiquo le rend accessible.</p>
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { num: '01', title: 'Pas de validation terrain', desc: "Tu construis sans savoir si quelqu'un veut vraiment ton produit" },
-              { num: '02', title: 'Données locales absentes', desc: "Les études de marché génériques ne reflètent pas la réalité marocaine" },
-              { num: '03', title: 'Aucun plan structuré', desc: "Tu avances à l'aveugle sans étapes claires ni indicateurs de succès" },
-            ].map((c) => (
-              <div key={c.num} className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <div className="font-syne font-700 text-turquoise text-sm mb-3">{c.num}</div>
-                <h3 className="font-syne font-700 text-lg text-white mb-2">{c.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{c.desc}</p>
+            {problems.map((p) => (
+              <div key={p.title} className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition">
+                <div className="w-12 h-12 rounded-xl bg-turquoise/10 flex items-center justify-center mb-5">
+                  <p.icon className="w-6 h-6 text-turquoise" />
+                </div>
+                <h3 className="font-syne font-700 text-lg text-white mb-2">{p.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{p.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Interactive demo */}
-      <section id="demo" className="py-20 px-4 sm:px-6 bg-slate-900/30">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-syne font-700 text-3xl text-white mb-3">Teste la démo</h2>
-          <p className="text-slate-400 mb-8">Décris une idée et vois comment Valiquo l'analyse</p>
-          <textarea
-            value={demoText}
-            onChange={(e) => setDemoText(e.target.value)}
-            placeholder="Ex: Une plateforme de livraison de repas healthy à Casablanca pour les jeunes professionnels..."
-            maxLength={600}
-            className="w-full h-32 bg-slate-950 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 text-sm resize-none focus:outline-none focus:border-turquoise/50 transition"
-          />
-          <div className="flex justify-between items-center mt-2 mb-4">
-            <span className="text-xs text-slate-600">{demoText.length}/600</span>
-          </div>
-          <Link to="/scan" className="inline-flex items-center gap-2 bg-turquoise hover:bg-turquoise-dark text-slate-950 font-medium px-6 py-3 rounded-lg transition">
-            Analyser (démo) <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Features grid */}
-      <section id="features" className="py-20 px-4 sm:px-6">
+      {/* Modules Section */}
+      <section id="modules" className="py-24 px-4 sm:px-6 bg-slate-900/20">
         <div className="max-w-5xl mx-auto">
-          <h2 className="font-syne font-700 text-3xl text-white text-center mb-12">Tout ce dont tu as besoin pour valider</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {features.map((f) => (
-              <div key={f.title} className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition">
-                <f.icon className="w-8 h-8 text-turquoise mb-4" />
-                <h3 className="font-syne font-700 text-white mb-2">{f.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+          <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white text-center mb-4">Une plateforme qui grandit avec toi</h2>
+          <p className="text-slate-400 text-center mb-12">Valiquo évolue pour couvrir tous les aspects de l'entrepreneuriat au Maroc.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {modules.map((m) => (
+              <div key={m.version} className={`rounded-xl p-5 border transition ${m.status === 'DISPONIBLE' ? 'bg-slate-900 border-turquoise/30' : 'bg-slate-900/50 border-slate-800'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-syne font-700 text-turquoise">{m.version}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${m.status === 'DISPONIBLE' ? 'bg-turquoise/10 text-turquoise' : 'bg-slate-800 text-slate-500'}`}>{m.status}</span>
+                </div>
+                <m.icon className="w-6 h-6 text-slate-300 mb-3" />
+                <h3 className="font-syne font-700 text-white mb-1">{m.title}</h3>
+                <p className="text-slate-500 text-sm">{m.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Process steps */}
-      <section className="py-20 px-4 sm:px-6 bg-slate-900/30">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="font-syne font-700 text-3xl text-white text-center mb-12">Comment ça marche</h2>
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {steps.map((s) => (
-              <div key={s.n} className="text-center">
-                <div className="font-syne font-800 text-4xl text-turquoise/20 mb-2">{s.n}</div>
-                <h3 className="font-syne font-700 text-white mb-1">{s.title}</h3>
-                <p className="text-slate-400 text-sm">{s.desc}</p>
-              </div>
-            ))}
+      {/* Coach IA Preview */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white mb-4">Ton conseiller juridique 24h/24</h2>
+            <p className="text-slate-400">Pose tes questions et obtiens des réponses basées sur les textes officiels marocains.</p>
           </div>
-        </div>
-      </section>
-
-      {/* Coach preview */}
-      <section className="py-20 px-4 sm:px-6">
-        <div className="max-w-md mx-auto">
-          <h2 className="font-syne font-700 text-3xl text-white text-center mb-8">Ton Coach IA</h2>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-turquoise flex items-center justify-center text-slate-950 font-bold text-sm shrink-0">V</div>
-              <div className="bg-slate-800 rounded-xl rounded-tl-sm px-4 py-2.5 text-sm text-slate-300 max-w-[80%]">
-                Salut ! Je suis ton Coach Valiquo. Tu veux savoir comment tester ton idée sur le marché marocain ?
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div className="bg-slate-800/50 border-b border-slate-700/50 px-5 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-turquoise flex items-center justify-center text-slate-950 font-bold text-sm">V</div>
+              <div>
+                <div className="text-white text-sm font-medium">Coach Valiquo</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                  <span className="text-xs text-slate-500">En ligne · Spécialisé en droit des affaires marocain</span>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 justify-end">
-              <div className="bg-turquoise/10 border border-turquoise/20 rounded-xl rounded-tr-sm px-4 py-2.5 text-sm text-turquoise max-w-[80%]">
-                Oui, comment trouver mes premiers clients à Casablanca ?
+            <div className="p-5 space-y-4 max-h-96 overflow-y-auto">
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-blue/20 flex items-center justify-center text-blue text-xs font-bold shrink-0">Y</div>
+                <div className="bg-slate-800 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-slate-300 max-w-lg">
+                  Je veux créer une auto-entreprise à Casablanca, par où je commence ?
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-turquoise flex items-center justify-center text-slate-950 text-xs font-bold shrink-0">V</div>
+                <div className="bg-slate-800/80 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-slate-300 max-w-lg whitespace-pre-line">
+                  Voici les étapes officielles selon la loi 114-13 :{'\n\n'}1. Inscription sur autoentrepreneur.ma (gratuit, 24h){'\n'}2. Obtention du numéro d'identification (48h){'\n'}3. Déclaration CNSS obligatoire dans les 30 jours{'\n\n'}Tu veux que je détaille les obligations fiscales ?
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <div className="bg-turquoise/10 border border-turquoise/20 rounded-2xl rounded-tr-md px-4 py-3 text-sm text-turquoise max-w-lg">
+                  Oui, c'est quoi le régime fiscal ?
+                </div>
+                <div className="w-7 h-7 rounded-full bg-blue/20 flex items-center justify-center text-blue text-xs font-bold shrink-0">Y</div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-turquoise flex items-center justify-center text-slate-950 text-xs font-bold shrink-0">V</div>
+                <div className="bg-slate-800/80 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-slate-300 max-w-lg">
+                  En tant qu'auto-entrepreneur, tu bénéficies du régime forfaitaire. Le taux dépend du chiffre d'affaires : 0.5% pour les activités commerciales, 1% pour les services. Tu déclares mensuellement ou trimestriellement via l'interface en ligne...
+                </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-turquoise flex items-center justify-center text-slate-950 font-bold text-sm shrink-0">V</div>
-              <div className="bg-slate-800 rounded-xl rounded-tl-sm px-4 py-2.5 text-sm text-slate-300 max-w-[80%]">
-                Commence par des interviews dans les coworkings et cafés de Maarif. Cible 15 personnes minimum. Je peux t'aider à préparer un guide d'entretien.
+            <div className="border-t border-slate-800 p-4">
+              <div className="flex gap-3">
+                <input placeholder="Pose ta question réglementaire..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-turquoise/50 transition" />
+                <Link to="/dashboard/coach" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-medium px-5 py-3 rounded-xl transition flex items-center gap-2">
+                  Accéder <Send className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </div>
@@ -230,27 +278,28 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20 px-4 sm:px-6 bg-slate-900/30">
+      <section id="pricing" className="py-24 px-4 sm:px-6 bg-slate-900/20">
         <div className="max-w-5xl mx-auto">
-          <h2 className="font-syne font-700 text-3xl text-white text-center mb-12">Tarifs simples</h2>
+          <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white text-center mb-4">Tarifs simples</h2>
+          <p className="text-slate-400 text-center mb-12">Accessibles à tous les entrepreneurs marocains.</p>
           <div className="grid md:grid-cols-3 gap-6">
             {plans.map((p) => (
-              <div key={p.name} className={`rounded-2xl p-6 border ${p.highlight ? 'bg-slate-900 border-turquoise shadow-lg shadow-turquoise/10' : 'bg-slate-900/60 border-slate-800'}`}>
-                {p.highlight && <div className="text-turquoise text-xs font-medium mb-3 uppercase tracking-wider">Le plus populaire</div>}
+              <div key={p.name} className={`rounded-2xl p-6 border ${p.highlight ? 'bg-slate-900 border-turquoise/40 shadow-lg shadow-turquoise/10' : 'bg-slate-900/50 border-slate-800'}`}>
+                {p.highlight && <div className="text-turquoise text-xs font-semibold mb-3 uppercase tracking-wider">Le plus populaire</div>}
                 <h3 className="font-syne font-700 text-xl text-white mb-1">{p.name}</h3>
                 <div className="mb-6">
                   <span className="font-syne font-800 text-3xl text-white">{p.price}</span>
                   <span className="text-slate-500 text-sm">{p.period}</span>
                 </div>
-                <ul className="space-y-2.5 mb-6">
+                <ul className="space-y-3 mb-6">
                   {p.features.map((f) => (
                     <li key={f} className="text-sm text-slate-400 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-turquoise rounded-full shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-turquoise shrink-0" />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <Link to={p.highlight ? '/scan' : '/register'} className={`block text-center py-2.5 rounded-lg text-sm font-medium transition ${p.highlight ? 'bg-turquoise hover:bg-turquoise-dark text-slate-950' : 'border border-slate-700 hover:border-slate-500 text-white'}`}>
+                <Link to={p.highlight ? '/scan' : '/register'} className={`block text-center py-3 rounded-xl text-sm font-semibold transition ${p.highlight ? 'bg-turquoise hover:bg-turquoise-dark text-slate-950' : 'border border-slate-700 hover:border-slate-500 text-white'}`}>
                   {p.cta}
                 </Link>
               </div>
@@ -260,45 +309,47 @@ export default function Landing() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 400px 300px at 50% 50%, rgba(45,212,191,0.06), transparent)' }} />
+      <section className="py-24 px-4 sm:px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-geometric-glow pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative">
-          <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white mb-4">Prêt à valider ton idée ?</h2>
-          <p className="text-slate-400 mb-8">Arrête de deviner. Scanne ton idée en 5 minutes et agis avec confiance.</p>
-          <Link to="/scan" className="inline-flex items-center gap-2 bg-turquoise hover:bg-turquoise-dark text-slate-950 font-medium px-8 py-3.5 rounded-lg text-base transition">
-            Scanner mon idée <ChevronRight className="w-4 h-4" />
+          <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white mb-4">Prêt à lancer ton projet en conformité ?</h2>
+          <p className="text-slate-400 mb-8">Rejoins les entrepreneurs marocains qui valident avant de construire.</p>
+          <Link to="/scan" className="inline-flex items-center gap-2 bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold px-8 py-4 rounded-xl text-base transition shadow-lg shadow-turquoise/20">
+            Commencer gratuitement <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="border-t border-slate-800 py-12 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto grid sm:grid-cols-3 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-5 h-5 text-turquoise" />
-              <span className="font-syne font-800 text-lg text-white">Valiquo</span>
+      <footer id="contact" className="border-t border-slate-800 py-12 px-4 sm:px-6 bg-slate-900/30">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-4 gap-8 mb-12">
+            <div className="sm:col-span-2">
+              <Link to="/" className="inline-flex items-center gap-2 mb-3">
+                <Zap className="w-5 h-5 text-turquoise" />
+                <span className="font-syne font-800 text-lg text-white">Valiquo</span>
+              </Link>
+              <p className="text-slate-500 text-sm leading-relaxed">Le droit des affaires marocain, accessible à tous.</p>
             </div>
-            <p className="text-slate-500 text-sm">Validation d'idées business par intelligence artificielle, adaptée au marché marocain.</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-white text-sm mb-3">Produit</h4>
-            <div className="space-y-2 text-sm text-slate-500">
-              <a href="#features" className="block hover:text-slate-300 transition">Fonctionnalités</a>
-              <a href="#pricing" className="block hover:text-slate-300 transition">Tarifs</a>
-              <Link to="/scan" className="block hover:text-slate-300 transition">Scanner</Link>
+            <div>
+              <h4 className="font-medium text-white text-sm mb-3">Produit</h4>
+              <div className="space-y-2 text-sm text-slate-500">
+                <a href="#modules" className="block hover:text-slate-300 transition">Modules</a>
+                <a href="#pricing" className="block hover:text-slate-300 transition">Tarifs</a>
+                <Link to="/scan" className="block hover:text-slate-300 transition">Scanner</Link>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium text-white text-sm mb-3">Contact</h4>
+              <div className="space-y-2 text-sm text-slate-500">
+                <p>contact@valiquo.ma</p>
+                <p>Casablanca, Maroc 🇲🇦</p>
+              </div>
             </div>
           </div>
-          <div>
-            <h4 className="font-medium text-white text-sm mb-3">Contact</h4>
-            <div className="space-y-2 text-sm text-slate-500">
-              <p>contact@valiquo.ma</p>
-              <p>Casablanca, Maroc</p>
-            </div>
+          <div className="pt-8 border-t border-slate-800/50 text-center text-xs text-slate-600">
+            &copy; 2026 Valiquo. Tous droits réservés.
           </div>
-        </div>
-        <div className="max-w-5xl mx-auto mt-8 pt-6 border-t border-slate-800/50 text-center text-xs text-slate-600">
-          &copy; 2026 Valiquo. Tous droits réservés.
         </div>
       </footer>
     </div>
