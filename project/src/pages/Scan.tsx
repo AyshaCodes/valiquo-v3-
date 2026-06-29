@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, AlertTriangle, CheckCircle2, Copy, RotateCcw, MessageCircle, ChevronRight, FileText, Building2, Clock, Coins, Users, MapPin, ExternalLink } from 'lucide-react';
+import { Zap, AlertTriangle, CheckCircle2, Copy, RotateCcw, MessageCircle, ChevronRight, FileText, Building2, Clock, Coins, Users } from 'lucide-react';
+import PublicNavbar from '../components/PublicNavbar';
+import { useAuth } from '../contexts/AuthContext';
 
 const thematiques = ['Création d\'entreprise', 'Statuts juridiques', 'Fiscalité', 'Procédures OMPIC', 'CNSS & Social', 'Financement', 'Autre'];
 const villes = ['Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger', 'Agadir', 'Autre'];
@@ -52,6 +54,7 @@ function ResultCard({ icon: Icon, title, value }: { icon: React.ElementType; tit
 }
 
 export default function Scan() {
+  const { user } = useAuth();
   const [question, setQuestion] = useState('');
   const [thematique, setThematique] = useState('Création d\'entreprise');
   const [ville, setVille] = useState('Casablanca');
@@ -82,25 +85,28 @@ export default function Scan() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 zellige-overlay">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-turquoise/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-7 h-7 text-turquoise animate-pulse" />
-            </div>
-            <h2 className="font-syne font-700 text-2xl text-white">Analyse en cours...</h2>
-          </div>
-          <div className="space-y-3">
-            {loadingSteps.map((step, i) => (
-              <div key={step} className={`flex items-center gap-3 transition-all duration-500 ${i <= loadStep - 1 ? 'opacity-100' : 'opacity-20'}`}>
-                {i <= loadStep - 1 ? (
-                  <CheckCircle2 className="w-5 h-5 text-turquoise shrink-0" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-slate-700 shrink-0" />
-                )}
-                <span className={`text-sm ${i <= loadStep - 1 ? 'text-white' : 'text-slate-600'}`}>{step}</span>
+      <div className="min-h-screen bg-slate-950 zellige-overlay">
+        <PublicNavbar navLinks={[]} />
+        <div className="flex items-center justify-center px-4 pt-24 min-h-screen">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="w-14 h-14 bg-turquoise/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-7 h-7 text-turquoise animate-pulse" />
               </div>
-            ))}
+              <h2 className="font-syne font-700 text-2xl text-white">Analyse en cours...</h2>
+            </div>
+            <div className="space-y-3">
+              {loadingSteps.map((step, i) => (
+                <div key={step} className={`flex items-center gap-3 transition-all duration-500 ${i <= loadStep - 1 ? 'opacity-100' : 'opacity-20'}`}>
+                  {i <= loadStep - 1 ? (
+                    <CheckCircle2 className="w-5 h-5 text-turquoise shrink-0" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-slate-700 shrink-0" />
+                  )}
+                  <span className={`text-sm ${i <= loadStep - 1 ? 'text-white' : 'text-slate-600'}`}>{step}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -110,7 +116,8 @@ export default function Scan() {
   if (result) {
     return (
       <div className="min-h-screen bg-slate-950 font-inter zellige-overlay">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <PublicNavbar navLinks={[]} />
+        <div className="max-w-4xl mx-auto px-4 pt-24 pb-8">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden mb-6">
             <div className="bg-slate-800/50 border-b border-slate-700/50 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -205,14 +212,25 @@ export default function Scan() {
 
   return (
     <div className="min-h-screen bg-slate-950 font-inter zellige-overlay">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-amber/10 border border-amber/20 rounded-xl p-4 flex items-start gap-3 mb-6">
-          <AlertTriangle className="w-5 h-5 text-amber shrink-0 mt-0.5" />
-          <div>
-            <p className="text-amber text-sm font-medium">Mode invité</p>
-            <p className="text-slate-400 text-xs">Tes consultations ne seront pas sauvegardées. <Link to="/register" className="text-turquoise hover:underline">Crée un compte</Link> pour conserver ton historique.</p>
+      <PublicNavbar navLinks={[]} />
+      <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
+        {!user ? (
+          <div className="bg-amber/10 border border-amber/20 rounded-xl p-4 flex items-start gap-3 mb-6">
+            <AlertTriangle className="w-5 h-5 text-amber shrink-0 mt-0.5" />
+            <div>
+              <p className="text-amber text-sm font-medium">Mode invité</p>
+              <p className="text-slate-400 text-xs">Tes consultations ne seront pas sauvegardées. <Link to="/register" className="text-turquoise hover:underline">Crée un compte</Link> pour conserver ton historique.</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-turquoise/10 border border-turquoise/20 rounded-xl p-4 flex items-start gap-3 mb-6">
+            <CheckCircle2 className="w-5 h-5 text-turquoise shrink-0 mt-0.5" />
+            <div>
+              <p className="text-turquoise text-sm font-medium">Compte connecté</p>
+              <p className="text-slate-400 text-xs">Tes consultations seront enregistrées dans ton historique.</p>
+            </div>
+          </div>
+        )}
 
         <h1 className="font-syne font-800 text-3xl text-white mb-2">Pose ta question réglementaire.</h1>
         <p className="text-slate-400 text-sm mb-8">Décris ton projet et obtiens une réponse basée sur les textes officiels marocains en vigueur.</p>

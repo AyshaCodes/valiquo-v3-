@@ -1,12 +1,37 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { FormEvent, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
+import { useAuth, getAuthErrorMessage } from '../contexts/AuthContext';
 
 const villes = ['Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger', 'Agadir', 'Autre'];
 
 export default function Register() {
   const [form, setForm] = useState({ prenom: '', nom: '', email: '', password: '', ville: 'Casablanca' });
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
   const set = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      await register({
+        first_name: form.prenom,
+        last_name: form.nom,
+        email: form.email,
+        password: form.password,
+        city: form.ville,
+      });
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 zellige-overlay">
@@ -22,7 +47,7 @@ export default function Register() {
           <p className="text-slate-500 text-sm mt-1">Rejoins les entrepreneurs marocains</p>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm text-slate-300 mb-1.5 block">Prénom</label>
@@ -30,6 +55,7 @@ export default function Register() {
                 value={form.prenom}
                 onChange={(e) => set('prenom', e.target.value)}
                 placeholder="Youssef"
+                required
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-turquoise/50 transition"
               />
             </div>
@@ -39,6 +65,7 @@ export default function Register() {
                 value={form.nom}
                 onChange={(e) => set('nom', e.target.value)}
                 placeholder="El Amrani"
+                required
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-turquoise/50 transition"
               />
             </div>
@@ -50,6 +77,7 @@ export default function Register() {
               value={form.email}
               onChange={(e) => set('email', e.target.value)}
               placeholder="ton@email.ma"
+              required
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-turquoise/50 transition"
             />
           </div>
@@ -60,6 +88,8 @@ export default function Register() {
               value={form.password}
               onChange={(e) => set('password', e.target.value)}
               placeholder="••••••••"
+              required
+              minLength={8}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-turquoise/50 transition"
             />
           </div>
@@ -73,10 +103,15 @@ export default function Register() {
               {villes.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <Link to="/dashboard" className="block w-full bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold py-3 rounded-xl text-sm text-center transition shadow-lg shadow-turquoise/20">
-            Créer mon compte
-          </Link>
-        </div>
+          {error && <p className="text-sm text-red-400">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="block w-full bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold py-3 rounded-xl text-sm text-center transition shadow-lg shadow-turquoise/20 disabled:opacity-60"
+          >
+            {submitting ? 'Création...' : 'Créer mon compte'}
+          </button>
+        </form>
 
         <p className="text-center text-sm text-slate-500 mt-5">
           Déjà un compte ?{' '}

@@ -8,6 +8,7 @@ import DashboardHome from './pages/dashboard/DashboardHome';
 import Coach from './pages/dashboard/Coach';
 import Analyses from './pages/dashboard/Analyses';
 import Rapports from './pages/dashboard/Rapports';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
@@ -16,7 +17,14 @@ export default function App() {
       <Route path="/scan" element={<Scan />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />}>
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<DashboardHome />} />
         <Route path="coach" element={<Coach />} />
         <Route path="analyses" element={<Analyses />} />

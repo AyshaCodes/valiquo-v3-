@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Plus, ChevronRight, Send, BarChart3, Target, FileText, FolderOpen, Zap, MessageCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, ChevronRight, Send, BarChart3, Target, FileText, MessageCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { getUserFirstName } from '../../lib/userDisplay';
 
 const consultations = [
   { title: 'Création SARL Casablanca', thematique: 'Création d\'entreprise', status: 'Réponse générée', days: 3 },
@@ -8,6 +10,8 @@ const consultations = [
   { title: 'Obligations CNSS employeur', thematique: 'CNSS & Social', status: 'En cours', days: 2 },
 ];
 
+// TODO: fetch real dashboard stats from API (e.g. GET /api/dashboard/stats)
+// Replace placeholder values for consultations, coach questions, themes, and documents.
 const stats = [
   { icon: FileText, label: 'Consultations', value: '3' },
   { icon: MessageCircle, label: 'Questions au Coach', value: '12' },
@@ -15,20 +19,22 @@ const stats = [
   { icon: BarChart3, label: 'Documents', value: '50+' },
 ];
 
-const chatMessages = [
-  { from: 'bot', text: 'Salut Youssef ! Pose-moi une question sur la réglementation marocaine.' },
-];
-
 const suggestions = ['Comment créer une SARL ?', 'Quel est le taux d\'IS ?', 'Comment m\'inscrire à la CNSS ?'];
 
 export default function DashboardHome() {
   const [chatInput, setChatInput] = useState('');
+  const { user } = useAuth();
+  const firstName = getUserFirstName(user);
+  const chatMessages = useMemo(
+    () => [{ from: 'bot' as const, text: `Salut ${firstName} ! Pose-moi une question sur la réglementation marocaine.` }],
+    [firstName],
+  );
 
   return (
     <div className="p-5 md:p-6 space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-syne font-700 text-2xl text-white">Bonjour Youssef</h1>
+          <h1 className="font-syne font-700 text-2xl text-white">Bonjour {firstName}</h1>
           <p className="text-slate-500 text-sm">Voici un aperçu de tes consultations réglementaires</p>
         </div>
         <div className="flex gap-2">

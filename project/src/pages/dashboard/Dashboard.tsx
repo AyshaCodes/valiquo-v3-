@@ -1,6 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Zap, LayoutDashboard, FolderOpen, MessageCircle, BarChart3, FileText, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { getUserDisplayName, getUserInitial } from '../../lib/userDisplay';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', end: true },
@@ -12,6 +14,16 @@ const navItems = [
 
 export default function Dashboard() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const displayName = getUserDisplayName(user);
+  const initial = getUserInitial(user);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex font-inter zellige-overlay">
@@ -47,12 +59,16 @@ export default function Dashboard() {
         </nav>
         <div className="px-3 py-3 border-t border-slate-800/60">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-turquoise/20 text-turquoise flex items-center justify-center font-medium text-sm">Y</div>
+            <div className="w-8 h-8 rounded-full bg-turquoise/20 text-turquoise flex items-center justify-center font-medium text-sm">{initial}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">Youssef El Amrani</p>
+              <p className="text-white text-sm font-medium truncate">{displayName}</p>
             </div>
           </div>
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-400/10 w-full transition mt-1">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-400/10 w-full transition mt-1"
+          >
             <LogOut className="w-4 h-4" />
             Déconnexion
           </button>

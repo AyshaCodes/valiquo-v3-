@@ -1,14 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Send, Plus, Scale } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { getUserFirstName, getUserInitial } from '../../lib/userDisplay';
 
 const conversations = [
   { id: 1, title: 'Création SARL - Procédures', date: "Aujourd'hui" },
   { id: 2, title: 'Fiscalité auto-entrepreneur', date: 'Hier' },
   { id: 3, title: 'Obligations CNSS', date: 'Il y a 3 jours' },
-];
-
-const initialMessages = [
-  { from: 'bot' as const, text: 'Salut Youssef ! Je suis ton conseiller réglementaire spécialisé dans le droit des affaires marocain. Comment puis-je t\'aider ?' },
 ];
 
 const suggestions = [
@@ -18,11 +16,22 @@ const suggestions = [
   "C'est quoi le statut auto-entrepreneur ?",
 ];
 
+function buildWelcomeMessage(firstName: string) {
+  return `Salut ${firstName} ! Je suis ton conseiller réglementaire spécialisé dans le droit des affaires marocain. Comment puis-je t'aider ?`;
+}
+
 export default function Coach() {
-  const [messages, setMessages] = useState(initialMessages);
+  const { user } = useAuth();
+  const firstName = getUserFirstName(user);
+  const userInitial = getUserInitial(user);
+  const [messages, setMessages] = useState<{ from: 'bot' | 'user'; text: string }[]>([]);
   const [input, setInput] = useState('');
   const [activeConv, setActiveConv] = useState(1);
   const [typing, setTyping] = useState(false);
+
+  useEffect(() => {
+    setMessages([{ from: 'bot', text: buildWelcomeMessage(firstName) }]);
+  }, [firstName]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -81,7 +90,7 @@ export default function Coach() {
                 {m.text}
               </div>
               {m.from === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-blue/20 text-blue flex items-center justify-center font-bold text-sm shrink-0">Y</div>
+                <div className="w-8 h-8 rounded-full bg-blue/20 text-blue flex items-center justify-center font-bold text-sm shrink-0">{userInitial}</div>
               )}
             </div>
           ))}

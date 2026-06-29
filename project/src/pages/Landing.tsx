@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, FileText, Scale, BarChart3, Database, ChevronRight, Menu, X, Send, CheckCircle2, Coins, ArrowRight } from 'lucide-react';
+import { Zap, FileText, Scale, BarChart3, Database, ChevronRight, Send, CheckCircle2, Coins, ArrowRight } from 'lucide-react';
 import { LuLayers } from '../lib/icons';
+import PublicNavbar from '../components/PublicNavbar';
+import { useAuth } from '../contexts/AuthContext';
 
 const modules = [
   { version: 'V1', status: 'DISPONIBLE', title: 'Module Réglementaire', desc: 'Création d\'entreprise, statuts juridiques, fiscalité', icon: Scale },
@@ -23,42 +24,14 @@ const plans = [
 ];
 
 export default function Landing() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const heroPrimaryCta = user
+    ? { to: '/dashboard', label: 'Accéder à mon espace' }
+    : { to: '/scan', label: 'Poser ma question gratuitement' };
 
   return (
     <div className="min-h-screen bg-slate-950 font-inter zellige-overlay">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-turquoise rounded-lg flex items-center justify-center">
-              <Zap className="w-4 h-4 text-slate-950" />
-            </div>
-            <span className="font-syne font-800 text-xl text-white">Valiquo</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#modules" className="text-slate-400 hover:text-white transition text-sm font-medium">Modules</a>
-            <a href="#pricing" className="text-slate-400 hover:text-white transition text-sm font-medium">Tarifs</a>
-            <a href="#contact" className="text-slate-400 hover:text-white transition text-sm font-medium">Contact</a>
-          </div>
-          <div className="hidden md:flex items-center gap-3">
-            <Link to="/login" className="text-sm text-slate-300 hover:text-white transition px-4 py-2 font-medium">Connexion</Link>
-            <Link to="/scan" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold text-sm px-5 py-2.5 rounded-lg transition">Poser ma question</Link>
-          </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-white p-2">
-            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-        {menuOpen && (
-          <div className="md:hidden bg-slate-900 border-t border-slate-800 px-4 py-4 space-y-3">
-            <a href="#modules" className="block text-slate-300 text-sm font-medium py-2">Modules</a>
-            <a href="#pricing" className="block text-slate-300 text-sm font-medium py-2">Tarifs</a>
-            <a href="#contact" className="block text-slate-300 text-sm font-medium py-2">Contact</a>
-            <Link to="/login" className="block text-slate-300 text-sm font-medium py-2">Connexion</Link>
-            <Link to="/scan" className="block bg-turquoise text-slate-950 font-semibold text-sm px-4 py-3 rounded-lg text-center">Poser ma question</Link>
-          </div>
-        )}
-      </nav>
+      <PublicNavbar />
 
       {/* Hero Section */}
       <section className="pt-28 pb-24 px-4 sm:px-6 relative overflow-hidden">
@@ -83,8 +56,8 @@ export default function Landing() {
             Valiquo analyse ta question réglementaire en 5 minutes — procédures officielles, obligations légales et plan d'action concret basé sur les textes marocains en vigueur.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-            <Link to="/scan" className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold px-8 py-4 rounded-xl text-base transition inline-flex items-center justify-center gap-2 shadow-lg shadow-turquoise/20">
-              Poser ma question gratuitement <ChevronRight className="w-5 h-5" />
+            <Link to={heroPrimaryCta.to} className="bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold px-8 py-4 rounded-xl text-base transition inline-flex items-center justify-center gap-2 shadow-lg shadow-turquoise/20">
+              {heroPrimaryCta.label} <ChevronRight className="w-5 h-5" />
             </Link>
             <a href="#demo" className="border border-slate-600 hover:border-slate-500 text-white font-medium px-8 py-4 rounded-xl text-base transition inline-flex items-center justify-center">
               Voir une démo
@@ -314,8 +287,8 @@ export default function Landing() {
         <div className="max-w-3xl mx-auto text-center relative">
           <h2 className="font-syne font-800 text-3xl sm:text-4xl text-white mb-4">Prêt à lancer ton projet en conformité ?</h2>
           <p className="text-slate-400 mb-8">Rejoins les entrepreneurs marocains qui valident avant de construire.</p>
-          <Link to="/scan" className="inline-flex items-center gap-2 bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold px-8 py-4 rounded-xl text-base transition shadow-lg shadow-turquoise/20">
-            Commencer gratuitement <ArrowRight className="w-5 h-5" />
+          <Link to={user ? '/dashboard' : '/scan'} className="inline-flex items-center gap-2 bg-turquoise hover:bg-turquoise-dark text-slate-950 font-semibold px-8 py-4 rounded-xl text-base transition shadow-lg shadow-turquoise/20">
+            {user ? 'Accéder à mon espace' : 'Commencer gratuitement'} <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>
