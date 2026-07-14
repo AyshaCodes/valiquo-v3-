@@ -45,10 +45,14 @@ class GeminiService implements GeminiServiceInterface
 
     public function generateResponse(string $question, string $thematique, ?string $ville): string
     {
-        $apiKey = config('gemini.api_key');
-
-        if (empty($apiKey)) {
-            throw GeminiException::missingApiKey();
+        $apiKeys = config('gemini.api_keys', []);
+        
+        if (empty($apiKeys)) {
+            $apiKey = config('gemini.api_key');
+            if (empty($apiKey)) {
+                throw GeminiException::missingApiKey();
+            }
+            $apiKeys = [$apiKey];
         }
 
         $primaryPath = $this->documentSelector->resolvePrimaryPath($thematique);
@@ -59,6 +63,15 @@ class GeminiService implements GeminiServiceInterface
 
         $documents = $this->textExtractor->getTextsForPaths([$primaryPath]);
 
+        // Limit text to 1500 characters for "Création d'entreprise" to avoid quota
+        if ($thematique === 'Création d\'entreprise') {
+            foreach ($documents as &$doc) {
+                if (mb_strlen($doc['text']) > 1500) {
+                    $doc['text'] = mb_substr($doc['text'], 0, 1500) . '…';
+                }
+            }
+        }
+
         $prompt = $this->buildPrompt($question, $thematique, $ville, $documents);
 
         $model = config('gemini.model');
@@ -68,46 +81,59 @@ class GeminiService implements GeminiServiceInterface
             $model,
         );
 
-        try {
-            $response = Http::timeout(config('gemini.timeout'))
-                ->acceptJson()
-                ->withQueryParameters(['key' => $apiKey])
-                ->post($url, [
-                    'system_instruction' => [
-                        'parts' => [
-                            ['text' => config('gemini.system_instruction')],
-                        ],
-                    ],
-                    'contents' => [
-                        [
-                            'role' => 'user',
+        $lastError = null;
+
+        foreach ($apiKeys as $apiKey) {
+            try {
+                $response = Http::timeout(config('gemini.timeout'))
+                    ->acceptJson()
+                    ->withQueryParameters(['key' => $apiKey])
+                    ->post($url, [
+                        'system_instruction' => [
                             'parts' => [
-                                ['text' => $prompt],
+                                ['text' => config('gemini.system_instruction')],
                             ],
                         ],
-                    ],
-                    'generationConfig' => [
-                        'temperature' => 0.3,
-                        'maxOutputTokens' => 4096,
-                    ],
-                ]);
-        } catch (ConnectionException) {
-            throw GeminiException::timeout();
+                        'contents' => [
+                            [
+                                'role' => 'user',
+                                'parts' => [
+                                    ['text' => $prompt],
+                                ],
+                            ],
+                        ],
+                        'generationConfig' => [
+                            'temperature' => 0.3,
+                            'maxOutputTokens' => 4096,
+                        ],
+                    ]);
+
+                if ($response->failed()) {
+                    $message = $response->json('error.message') ?? $response->body();
+                    $lastError = "API Key failed: {$message}";
+                    
+                    // Try next key if rate limited
+                    if ($response->status() === 429) {
+                        continue;
+                    }
+                    
+                    throw GeminiException::apiError((string) $message, $response->status());
+                }
+
+                $text = data_get($response->json(), 'candidates.0.content.parts.0.text');
+
+                if (! is_string($text) || trim($text) === '') {
+                    throw GeminiException::emptyResponse();
+                }
+
+                return trim($text);
+            } catch (ConnectionException $e) {
+                $lastError = $e->getMessage();
+                continue;
+            }
         }
 
-        if ($response->failed()) {
-            $message = $response->json('error.message') ?? $response->body();
-
-            throw GeminiException::apiError((string) $message, $response->status());
-        }
-
-        $text = data_get($response->json(), 'candidates.0.content.parts.0.text');
-
-        if (! is_string($text) || trim($text) === '') {
-            throw GeminiException::emptyResponse();
-        }
-
-        return trim($text);
+        throw GeminiException::apiError($lastError ?? 'All API keys failed', 429);
     }
 
     /**

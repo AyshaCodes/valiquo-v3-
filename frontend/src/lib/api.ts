@@ -58,7 +58,7 @@ export const authApi = {
 
   async login(email: string, password: string) {
     await getCsrfCookie();
-    return apiFetch<void>('/login', {
+    return apiFetch<void>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -66,7 +66,7 @@ export const authApi = {
 
   async register(data: import('../types/auth').RegisterData) {
     await getCsrfCookie();
-    return apiFetch<void>('/register', {
+    return apiFetch<void>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         ...data,
@@ -77,7 +77,7 @@ export const authApi = {
 
   async logout() {
     await getCsrfCookie();
-    return apiFetch<void>('/logout', { method: 'POST' });
+    return apiFetch<void>('/api/auth/logout', { method: 'POST' });
   },
 };
 
@@ -85,3 +85,64 @@ export function formatValidationErrors(errors?: Record<string, string[]>): strin
   if (!errors) return '';
   return Object.values(errors).flat().join(' ');
 }
+
+export interface ConsultationData {
+  id: number;
+  question: string;
+  thematique: string;
+  ville: string;
+  statut: 'en_attente' | 'en_cours' | 'terminee' | 'erreur';
+  reponse: string | null;
+  created_at: string;
+}
+
+export interface ConversationData {
+  id: number;
+  title: string | null;
+  created_at: string;
+}
+
+export interface MessageData {
+  id: number;
+  content: string;
+  role: 'user' | 'assistant';
+  created_at: string;
+}
+
+export const consultationApi = {
+  async create(data: { question: string; thematique: string; ville: string }): Promise<ConsultationData> {
+    // Use authenticated endpoint when logged in
+    return apiFetch<ConsultationData>('/api/consultations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async get(id: number): Promise<ConsultationData> {
+    return apiFetch<ConsultationData>(`/api/consultations/${id}`);
+  },
+};
+
+export const conversationApi = {
+  async create(title?: string): Promise<ConversationData> {
+    return apiFetch<ConversationData>('/api/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title }),
+    });
+  },
+
+  async getAll(): Promise<ConversationData[]> {
+    return apiFetch<ConversationData[]>('/api/conversations');
+  },
+
+  async get(id: number): Promise<ConversationData & { messages: MessageData[] }> {
+    return apiFetch<ConversationData & { messages: MessageData[] }>(`/api/conversations/${id}`);
+  },
+
+  async sendMessage(conversationId: number, content: string): Promise<MessageData> {
+    return apiFetch<MessageData>(`/api/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  },
+};

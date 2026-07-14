@@ -25,6 +25,24 @@ class ConsultationController extends Controller
             ->setStatusCode(201);
     }
 
+    public function storePublic(StoreConsultationRequest $request, ConsultationService $consultationService): JsonResponse
+    {
+        // For demo purposes, use a default user or create a temporary one
+        $user = \App\Models\User::first();
+        if (!$user) {
+            return response()->json(['error' => 'No users available'], 500);
+        }
+
+        $consultation = $consultationService->create(
+            $user,
+            $request->validated(),
+        );
+
+        return (new ConsultationResource($consultation))
+            ->response()
+            ->setStatusCode(201);
+    }
+
     public function index(Request $request, ConsultationService $consultationService): AnonymousResourceCollection
     {
         $consultations = $consultationService->paginateForUser($request->user());

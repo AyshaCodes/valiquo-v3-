@@ -2,12 +2,8 @@ import { useEffect, useState } from 'react';
 import { Send, Plus, Scale } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserFirstName, getUserInitial } from '../../lib/userDisplay';
+import { conversationApi, ConversationData, MessageData } from '../../lib/api';
 
-const conversations = [
-  { id: 1, title: 'Création SARL - Procédures', date: "Aujourd'hui" },
-  { id: 2, title: 'Fiscalité auto-entrepreneur', date: 'Hier' },
-  { id: 3, title: 'Obligations CNSS', date: 'Il y a 3 jours' },
-];
 
 const suggestions = [
   'Comment créer une SARL ?',
@@ -24,24 +20,72 @@ export default function Coach() {
   const { user } = useAuth();
   const firstName = getUserFirstName(user);
   const userInitial = getUserInitial(user);
+  const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [messages, setMessages] = useState<{ from: 'bot' | 'user'; text: string }[]>([]);
   const [input, setInput] = useState('');
-  const [activeConv, setActiveConv] = useState(1);
+  const [activeConv, setActiveConv] = useState<number | null>(null);
   const [typing, setTyping] = useState(false);
 
   useEffect(() => {
-    setMessages([{ from: 'bot', text: buildWelcomeMessage(firstName) }]);
-  }, [firstName]);
+    const loadConversations = async () => {
+      try {
+        const convs = await conversationApi.getAll();
+        setConversations(convs);
+        if (convs.length > 0 && !activeConv) {
+          setActiveConv(convs[0].id);
+          loadConversationMessages(convs[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      }
+    };
+    loadConversations();
+  }, []);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const loadConversationMessages = async (convId: number) => {
+    try {
+      const conv = await conversationApi.get(convId);
+      setMessages(conv.messages.map((m: MessageData) => ({
+        from: m.role === 'user' ? 'user' : 'bot',
+        text: m.content
+      })));
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const handleNewConversation = async () => {
+    try {
+      const newConv = await conversationApi.create();
+      setConversations([newConv, ...conversations]);
+      setActiveConv(newConv.id);
+      setMessages([{ from: 'bot', text: buildWelcomeMessage(firstName) }]);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || !activeConv) return;
     setMessages((m) => [...m, { from: 'user', text: input }]);
+    const userMessage = input;
     setInput('');
     setTyping(true);
-    setTimeout(() => {
-      setMessages((m) => [...m, { from: 'bot', text: "D'après la loi 5-96 sur les SARL au Maroc, voici ce que tu dois savoir :\n\n• Le capital minimum est de 1 MAD (symbolique) depuis 2018\n• Tu peux être seul associé ou jusqu'à 50\n• Le délai moyen de création est de 72h via le CRI\n\nTu veux que je détaille les étapes de création ?" }]);
+
+    try {
+      await conversationApi.sendMessage(activeConv, userMessage);
+      setTimeout(async () => {
+        const conv = await conversationApi.get(activeConv);
+        const botMessage = conv.messages.find((m: MessageData) => m.role === 'assistant' && m.content !== messages.find(msg => msg.from === 'bot')?.text);
+        if (botMessage) {
+          setMessages((m) => [...m, { from: 'bot', text: botMessage.content }]);
+        }
+        setTyping(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Error sending message:', error);
       setTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
@@ -50,7 +94,7 @@ export default function Coach() {
     <div className="flex h-[calc(100vh-56px)] md:h-screen">
       <div className="w-[260px] bg-slate-900/80 border-r border-slate-800/60 flex flex-col shrink-0 hidden md:flex">
         <div className="p-3 border-b border-slate-800/60">
-          <button className="w-full flex items-center justify-center gap-2 bg-turquoise/10 hover:bg-turquoise/20 text-turquoise text-sm font-semibold py-2.5 rounded-lg transition">
+          <button onClick={handleNewConversation} className="w-full flex items-center justify-center gap-2 bg-turquoise/10 hover:bg-turquoise/20 text-turquoise text-sm font-semibold py-2.5 rounded-lg transition">
             <Plus className="w-4 h-4" /> Nouvelle conversation
           </button>
         </div>
@@ -58,13 +102,13 @@ export default function Coach() {
           {conversations.map((c) => (
             <button
               key={c.id}
-              onClick={() => setActiveConv(c.id)}
+              onClick={() => { setActiveConv(c.id); loadConversationMessages(c.id); }}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition text-sm ${
                 activeConv === c.id ? 'bg-turquoise/10 text-turquoise' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
               }`}
             >
-              <div className="font-medium truncate">{c.title}</div>
-              <div className="text-xs text-slate-600 mt-0.5">{c.date}</div>
+              <div className="font-medium truncate">{c.title || 'Nouvelle conversation'}</div>
+              <div className="text-xs text-slate-600 mt-0.5">{new Date(c.created_at).toLocaleDateString('fr-FR')}</div>
             </button>
           ))}
         </div>

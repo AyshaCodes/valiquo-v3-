@@ -1,702 +1,346 @@
-import { useState, useEffect, useRef } from 'react';
-import {
-  Zap, MapPin, Briefcase, ArrowRight, Copy, RotateCcw,
-  Clock, CheckCircle, TrendingUp, Shield, AlertTriangle, Target,
-  ChevronDown, History, User, LogIn, Users, BarChart3, Database
-} from 'lucide-react';
-import { simulateScan } from '../lib/scanSimulator';
-import { supabase } from '../lib/supabase';
-import type { ScanResult, Scan, Page } from '../types';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Zap, AlertTriangle, CheckCircle2, Copy, RotateCcw, MessageCircle, ChevronRight, FileText, Building2, Clock, Coins, Users } from 'lucide-react';
+import PublicNavbar from '../components/PublicNavbar';
+import { useAuth } from '../contexts/AuthContext';
+import { consultationApi, ConsultationData } from '../lib/api';
 
-const VILLES = ['National', 'Casablanca', 'Rabat', 'Marrakech', 'Tanger', 'Fès', 'Agadir', 'Meknès'];
-const SECTEURS = [
-  '', 'Tech & Digital', 'E-commerce', 'Foodtech', 'Edtech', 'Fintech', 'Santé', 'Agriculture',
-  'Immobilier', 'Transport & Logistique', 'Tourisme', 'Mode & Textile', 'Énergie', 'Autre',
+const thematiques = ['Création d\'entreprise', 'Statuts juridiques', 'Fiscalité', 'Procédures OMPIC', 'CNSS & Social', 'Financement', 'Autre'];
+const villes = ['Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger', 'Agadir', 'Autre'];
+
+const loadingSteps = [
+  'Analyse de ta question...',
+  'Recherche dans les textes officiels marocains...',
+  'Consultation CGI 2024 & lois en vigueur...',
+  'Génération de ta réponse personnalisée...',
 ];
 
-const LOADER_STEPS = [
-  'Analyse du problème...',
-  'Évaluation du marché marocain...',
-  'Construction du SWOT...',
-  'Génération du plan d\'action...',
-];
+const mockResult = {
+  question: 'Je veux créer une SARL à Casablanca avec un associé. Quelles sont les étapes, le capital minimum et les obligations fiscales ?',
+  thematique: 'Création d\'entreprise',
+  ville: 'Casablanca',
+  sources: ['Loi 5-96', 'CGI 2024', 'OMPIC', 'Décret 2-21-574', 'CRI Casablanca'],
+  summary: 'La création d\'une SARL au Maroc est régie par la Loi 5-96. Depuis 2018, le capital minimum a été supprimé (1 MAD symbolique). Le processus implique OMPIC et le CRI, avec un délai moyen de 72h pour les centres régionaux d\'investissement.',
+  pointsCles: [
+    'Capital minimum: 1 MAD (depuis la réforme de 2018)',
+    'Nombre d\'associés: 1 à 50 personnes physiques ou morales',
+    'Délai moyen: 72h via CRI Casablanca (procédure accélérée)',
+    'Coût estimé: 1 000 à 3 000 MAD (frais notariaux inclus)',
+  ],
+  etapes: [
+    { step: 1, title: 'Rédiger les statuts', desc: 'Rédiger les statuts de la SARL (modèles disponibles sur OMPIC.ma)', timeline: '1-2 jours' },
+    { step: 2, title: 'Constituer le dossier', desc: 'Réunir les documents requis: statuts, copie CIN, attestation de blocage du capital', timeline: '1 jour' },
+    { step: 3, title: 'Déposer au CRI', desc: 'Déposer le dossier au Centre Régional d\'Investissement Casablanca', timeline: '1-3 jours' },
+    { step: 4, title: 'Immatriculation', desc: 'Obtenir le RC et l\'identification fiscale auprès de l\'OMPIC', timeline: '24h' },
+  ],
+  obligations: [
+    { org: 'OMPIC', role: 'Registre du commerce & propriété intellectuelle', url: 'ompic.ma' },
+    { org: 'DGI', role: 'Identifiant fiscal & déclarations fiscales', url: 'tax.gov.ma' },
+    { org: 'CRI', role: 'Guichet unique de création d\'entreprise', url: 'cri.ma' },
+    { org: 'CNSS', role: 'Affiliation obligatoire si employés', url: 'cnss.ma' },
+  ],
+  fiscal: 'Régime IS standard (taux de 15% CA < 100M MAD, 20% au-delà). Déclaration annuelle + acomptes provisionnels trimestriels.',
+};
 
-interface ScoreCircleProps {
-  score: number;
+// Simple markdown to HTML converter for fallback responses
+function simpleMarkdownToHtml(text: string): string {
+  if (!text) return '';
+  
+  let html = text;
+  
+  // Bold: **text** -> <strong>text</strong>
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Horizontal rules: --- -> <hr className="border-slate-700 my-4" />
+  html = html.replace(/^---$/gm, '<hr className="border-slate-700 my-4" />');
+  
+  // Preserve line breaks
+  html = html.replace(/\n/g, '<br />');
+  
+  return html;
 }
 
-function ScoreCircle({ score }: ScoreCircleProps) {
-  const [displayed, setDisplayed] = useState(0);
-  const circumference = 2 * Math.PI * 45;
-  const offset = circumference - (displayed / 100) * circumference;
-
-  useEffect(() => {
-    const start = Date.now();
-    const duration = 1500;
-    const frame = () => {
-      const elapsed = Date.now() - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayed(Math.floor(eased * score));
-      if (progress < 1) requestAnimationFrame(frame);
-    };
-    const id = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(id);
-  }, [score]);
-
-  const color = score >= 75 ? 'var(--accent)' : score >= 55 ? '#FBB024' : '#EF4444';
-
+function ResultCard({ icon: Icon, title, value }: { icon: React.ElementType; title: string; value: string }) {
   return (
-    <div className="relative w-32 h-32 mx-auto">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border)" strokeWidth="6" />
-        <circle
-          cx="50" cy="50" r="45" fill="none"
-          stroke={color}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ transition: 'none', filter: `drop-shadow(0 0 8px ${color})` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-extrabold" style={{ fontFamily: 'Syne', color }}>{displayed}</span>
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>/100</span>
+    <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-3">
+      <Icon className="w-5 h-5 text-turquoise shrink-0" />
+      <div>
+        <div className="text-xs text-slate-500">{title}</div>
+        <div className="text-sm text-white font-medium">{value}</div>
       </div>
     </div>
   );
 }
 
-interface ScanResultViewProps {
-  result: ScanResult;
-  problem: string;
-  onReset: () => void;
-  onCopy: () => void;
-  onNavigate: (to: Page) => void;
-}
-
-function ScanResultView({ result, problem, onReset, onCopy, onNavigate }: ScanResultViewProps) {
-  const swotSections = [
-    { key: 'forces', label: 'Forces', icon: <TrendingUp size={16} />, color: 'var(--accent)', bg: 'rgba(45, 212, 191, 0.08)', border: 'rgba(45, 212, 191, 0.2)' },
-    { key: 'faiblesses', label: 'Faiblesses', icon: <Shield size={16} />, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.08)', border: 'rgba(239, 68, 68, 0.2)' },
-    { key: 'opportunites', label: 'Opportunités', icon: <Zap size={16} />, color: '#60A5FA', bg: 'rgba(96, 165, 250, 0.08)', border: 'rgba(96, 165, 250, 0.2)' },
-    { key: 'menaces', label: 'Menaces', icon: <AlertTriangle size={16} />, color: '#FBB024', bg: 'rgba(251, 176, 36, 0.08)', border: 'rgba(251, 176, 36, 0.2)' },
-  ] as const;
-
-  return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="card p-6 text-center">
-        <p className="section-label mb-4">Score de validation</p>
-        <ScoreCircle score={result.score} />
-        <h2 className="text-xl font-bold mt-4 mb-2" style={{ fontFamily: 'Syne' }}>{result.verdict}</h2>
-        <p className="text-sm leading-relaxed max-w-lg mx-auto" style={{ color: 'var(--text-secondary)' }}>
-          {result.resume}
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-          {result.badges.map(b => (
-            <span key={b.label} className={`badge-${b.type}`}>{b.label}</span>
-          ))}
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
-          <Shield size={16} style={{ color: 'var(--accent)' }} />
-          Analyse SWOT
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {swotSections.map(s => {
-            const items = result.swot[s.key];
-            return (
-              <div
-                key={s.key}
-                className="p-4 rounded-xl"
-                style={{ background: s.bg, border: `1px solid ${s.border}` }}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <span style={{ color: s.color }}>{s.icon}</span>
-                  <span className="text-xs font-semibold" style={{ color: s.color }}>{s.label}</span>
-                </div>
-                <ul className="space-y-1.5">
-                  {items.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: s.color }} />
-                      {item.text}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
-          <MapPin size={16} style={{ color: 'var(--accent)' }} />
-          Contexte marché
-        </h3>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{result.contexte}</p>
-      </div>
-
-      {result.clients && (
-        <div className="card p-6">
-          <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
-            <Users size={16} style={{ color: 'var(--accent)' }} />
-            Clients et consommateurs potentiels
-          </h3>
-          
-          <div className="space-y-6">
-            <div>
-              <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Segmentation</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {result.clients.segments.map((seg, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-[var(--border)] bg-[rgba(15,23,42,0.3)]">
-                    <h4 className="text-xs font-bold mb-2 text-[var(--accent)]">{seg.nom}</h4>
-                    <div className="space-y-1">
-                      <p className="text-[10px] flex justify-between"><span style={{ color: 'var(--text-secondary)' }}>Âge:</span> <span>{seg.age}</span></p>
-                      <p className="text-[10px] flex justify-between"><span style={{ color: 'var(--text-secondary)' }}>Revenu:</span> <span>{seg.revenu}</span></p>
-                      <p className="text-[10px] flex justify-between"><span style={{ color: 'var(--text-secondary)' }}>Lieu:</span> <span>{seg.localisation}</span></p>
-                      <div className="mt-2 pt-2 border-t border-[var(--border)]">
-                        <p className="text-[10px] font-medium leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                          <span className="text-[var(--accent)] mr-1">Besoin:</span> {seg.besoin}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <p className="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-                  <BarChart3 size={12} /> Taille du marché (Estimation)
-                </p>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[rgba(45,212,191,0.1)] flex items-center justify-center text-[10px] font-bold text-[var(--accent)]">TAM</div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold">Marché Total</p>
-                      <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{result.clients.marche.tam}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[rgba(96,165,250,0.1)] flex items-center justify-center text-[10px] font-bold text-[#60A5FA]">SAM</div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold">Marché Adressable</p>
-                      <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{result.clients.marche.sam}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[rgba(251,176,36,0.1)] flex items-center justify-center text-[10px] font-bold text-[#FBB024]">SOM</div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold">Marché Cible</p>
-                      <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{result.clients.marche.som}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-                  <TrendingUp size={12} /> Habitudes d&apos;achat
-                </p>
-                <div className="space-y-3">
-                  {result.clients.comportements.map((habit, i) => (
-                    <div key={i}>
-                      <p className="text-[10px] font-bold mb-0.5">{habit.titre}</p>
-                      <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{habit.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-                <Database size={12} /> Méthodes de collecte recommandées
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {result.clients.collecte.map((col, i) => (
-                  <div key={i} className="flex gap-3 items-start">
-                    <CheckCircle size={12} className="mt-0.5 text-[var(--accent)] flex-shrink-0" />
-                    <div>
-                      <p className="text-[10px] font-bold">{col.methode}</p>
-                      <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{col.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="card p-6">
-        <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
-          <Target size={16} style={{ color: 'var(--accent)' }} />
-          Plan d&apos;action recommandé
-        </h3>
-        <div className="space-y-4">
-          {result.plan.map((step, i) => (
-            <div key={step.step} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ background: 'rgba(45, 212, 191, 0.15)', color: 'var(--accent)', border: '1px solid rgba(45, 212, 191, 0.3)' }}
-                >
-                  {step.step}
-                </div>
-                {i < result.plan.length - 1 && (
-                  <div className="w-px flex-1 mt-2" style={{ background: 'var(--border)' }} />
-                )}
-              </div>
-              <div className="pb-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm font-semibold" style={{ fontFamily: 'Syne' }}>{step.titre}</h4>
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(45, 212, 191, 0.1)', color: 'var(--accent)' }}>
-                    {step.duree}
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button onClick={onReset} className="btn-secondary flex-1 justify-center">
-          <RotateCcw size={15} />
-          Nouveau scan
-        </button>
-        <button onClick={onCopy} className="btn-secondary flex-1 justify-center">
-          <Copy size={15} />
-          Copier le rapport
-        </button>
-        <button onClick={() => onNavigate('dashboard')} className="btn-primary flex-1 justify-center">
-          <Zap size={15} />
-          Coach IA
-          <ArrowRight size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-interface ScanHistoryViewProps {
-  scans: Scan[];
-  onSelect: (scan: Scan) => void;
-  currentId?: string;
-}
-
-function ScanHistoryView({ scans, onSelect, currentId }: ScanHistoryViewProps) {
-  if (scans.length === 0) return null;
-
-  return (
-    <div className="card p-5">
-      <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ fontFamily: 'Syne' }}>
-        <History size={16} style={{ color: 'var(--accent)' }} />
-        Derniers scans
-      </h3>
-      <div className="space-y-2">
-        {scans.map(scan => {
-          const color = scan.score >= 75 ? 'var(--accent)' : scan.score >= 55 ? '#FBB024' : '#EF4444';
-          const isActive = scan.id === currentId;
-          return (
-            <button
-              key={scan.id}
-              onClick={() => onSelect(scan)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200"
-              style={{
-                background: isActive ? 'rgba(45, 212, 191, 0.08)' : 'rgba(15, 23, 42, 0.4)',
-                border: `1px solid ${isActive ? 'rgba(45, 212, 191, 0.3)' : 'var(--border)'}`,
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                style={{ background: 'rgba(15, 23, 42, 0.5)', color, fontFamily: 'Syne', border: `1px solid ${color}30` }}
-              >
-                {scan.score}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">{scan.problem.slice(0, 50)}...</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  {scan.ville} · {new Date(scan.created_at).toLocaleDateString('fr-MA')}
-                </p>
-              </div>
-              <ArrowRight size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-interface ScanProps {
-  navigate: (to: Page) => void;
-  user: { id: string; email: string; prenom?: string } | null;
-}
-
-export default function ScanPage({ navigate, user }: ScanProps) {
-  const [problem, setProblem] = useState('');
-  const [ville, setVille] = useState('National');
-  const [secteur, setSecteur] = useState('');
-  const [additionalInfo, setAdditionalInfo] = useState('');
+export default function Scan() {
+  const { user } = useAuth();
+  const [question, setQuestion] = useState('');
+  const [thematique, setThematique] = useState('Création d\'entreprise');
+  const [ville, setVille] = useState('Casablanca');
   const [loading, setLoading] = useState(false);
-  const [loaderStep, setLoaderStep] = useState(0);
-  const [result, setResult] = useState<ScanResult | null>(null);
-  const [currentScanId, setCurrentScanId] = useState<string | undefined>();
-  const [history, setHistory] = useState<Scan[]>([]);
+  const [loadStep, setLoadStep] = useState(0);
+  const [result, setResult] = useState<typeof mockResult | ConsultationData | null>(null);
   const [copied, setCopied] = useState(false);
-  const resultRef = useRef<HTMLDivElement>(null);
+
+  const handleScan = async () => {
+    if (!question.trim()) return;
+    setResult(null);
+    setLoading(true);
+    setLoadStep(0);
+
+    try {
+      const consultation = await consultationApi.create({ question, thematique, ville });
+      console.log('Created consultation ID:', consultation.id, 'status:', consultation.statut);
+      
+      let pollCount = 0;
+      const maxPolls = 60; // 2 minutes with 2-second intervals
+      
+      const pollInterval = setInterval(async () => {
+        pollCount++;
+        setLoadStep((prev) => Math.min(prev + 1, loadingSteps.length - 1));
+        
+        try {
+          const updated = await consultationApi.get(consultation.id);
+          console.log(`Poll #${pollCount}: status=${updated.statut}, has reponse=${!!updated.reponse}, reponse length=${updated.reponse?.length || 0}`);
+          
+          if (updated.statut === 'terminee' || (updated.reponse && updated.reponse.length > 0)) {
+            clearInterval(pollInterval);
+            console.log('Stopping poll - consultation complete');
+            setLoading(false);
+            setResult(updated);
+          } else if (updated.statut === 'erreur') {
+            clearInterval(pollInterval);
+            console.log('Stopping poll - consultation error');
+            setLoading(false);
+            setResult(updated);
+          } else if (pollCount >= maxPolls) {
+            clearInterval(pollInterval);
+            console.log('Stopping poll - max polls reached');
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('Error polling consultation:', error);
+        }
+      }, 2000);
+    } catch (error) {
+      console.error('Error creating consultation:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (user) loadHistory();
-  }, [user]);
+    // Removed - loadStep is now managed by polling interval only
+  }, []);
 
-  const loadHistory = async () => {
-    const { data } = await supabase
-      .from('scans')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (data) setHistory(data as Scan[]);
-  };
+  const handleCopy = () => { navigator.clipboard.writeText(JSON.stringify(result, null, 2)); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const handleNewScan = () => { setResult(null); setQuestion(''); };
 
-  const handleScan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!problem.trim() || problem.length < 20) return;
-    setLoading(true);
-    setResult(null);
-    setCurrentScanId(undefined);
-    setLoaderStep(0);
-
-    const stepInterval = setInterval(() => {
-      setLoaderStep(prev => Math.min(prev + 1, LOADER_STEPS.length - 1));
-    }, 700);
-
-    await new Promise(res => setTimeout(res, 3000));
-    clearInterval(stepInterval);
-    setLoaderStep(LOADER_STEPS.length - 1);
-
-    const scanResult = simulateScan(problem, ville, secteur, additionalInfo);
-    setResult(scanResult);
-    setLoading(false);
-
-    if (user) {
-      const { data } = await supabase
-        .from('scans')
-        .insert({
-          user_id: user.id,
-          problem,
-          ville,
-          secteur,
-          score: scanResult.score,
-          result: scanResult,
-        })
-        .select()
-        .maybeSingle();
-      if (data) {
-        setCurrentScanId(data.id);
-        loadHistory();
-      }
-    }
-
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  const handleReset = () => {
-    setResult(null);
-    setProblem('');
-    setVille('National');
-    setSecteur('');
-    setAdditionalInfo('');
-    setCurrentScanId(undefined);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCopy = () => {
-    if (!result) return;
-    const text = [
-      `=== RAPPORT VALIQUO ===`,
-      `Score: ${result.score}/100 — ${result.verdict}`,
-      ``,
-      result.resume,
-      ``,
-      `FORCES:`,
-      ...result.swot.forces.map(f => `• ${f.text}`),
-      ``,
-      `FAIBLESSES:`,
-      ...result.swot.faiblesses.map(f => `• ${f.text}`),
-      ``,
-      `OPPORTUNITÉS:`,
-      ...result.swot.opportunites.map(f => `• ${f.text}`),
-      ``,
-      `MENACES:`,
-      ...result.swot.menaces.map(f => `• ${f.text}`),
-      ``,
-      `CONTEXTE MARCHÉ:`,
-      result.contexte,
-      ``,
-      ...(result.clients ? [
-        `CLIENTS ET CONSOMMATEURS POTENTIELS:`,
-        `--- Segmentation ---`,
-        ...result.clients.segments.map(s => `• ${s.nom} (${s.age}, ${s.revenu}, ${s.localisation}): ${s.besoin}`),
-        ``,
-        `--- Marché ---`,
-        `TAM: ${result.clients.marche.tam}`,
-        `SAM: ${result.clients.marche.sam}`,
-        `SOM: ${result.clients.marche.som}`,
-        ``,
-        `--- Comportements ---`,
-        ...result.clients.comportements.map(c => `• ${c.titre}: ${c.description}`),
-        ``,
-        `--- Collecte ---`,
-        ...result.clients.collecte.map(c => `• ${c.methode}: ${c.description}`),
-        ``
-      ] : []),
-      `PLAN D'ACTION:`,
-      ...result.plan.map(p => `${p.step}. ${p.titre}\n   ${p.description}`),
-    ].join('\n');
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSelectHistory = (scan: Scan) => {
-    setProblem(scan.problem);
-    setVille(scan.ville);
-    setSecteur(scan.secteur);
-    setResult(scan.result as ScanResult);
-    setCurrentScanId(scan.id);
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  return (
-    <div className="min-h-screen pt-24 pb-20 relative z-10">
-      <div className="container max-w-3xl mx-auto">
-        <div className="text-center mb-10 animate-fade-in-up">
-          <p className="section-label mb-3">Scanner IA</p>
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-4" style={{ fontFamily: 'Syne' }}>
-            Décris le problème.
-            <br />
-            <span className="gradient-text">On trouve la preuve.</span>
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Analyse en 5 minutes · Score · SWOT · Plan d&apos;action
-          </p>
-          {!user && (
-            <div
-              className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full text-xs"
-              style={{ background: 'rgba(251, 176, 36, 0.1)', border: '1px solid rgba(251, 176, 36, 0.3)', color: '#FBB024' }}
-            >
-              <User size={13} />
-              Mode invité — tes scans ne seront pas sauvegardés.{' '}
-              <button
-                onClick={() => navigate('login')}
-                className="underline flex items-center gap-1"
-              >
-                <LogIn size={11} />
-                Se connecter
-              </button>
-            </div>
-          )}
-          {user && (
-            <div
-              className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full text-xs"
-              style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', color: 'var(--accent)' }}
-            >
-              <CheckCircle size={13} />
-              Connecté en tant que {user.prenom || user.email.split('@')[0]}
-            </div>
-          )}
-        </div>
-
-        {!result && !loading && (
-          <div className="space-y-5">
-            <form onSubmit={handleScan} className="card p-6 animate-fade-in-up delay-100 space-y-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-medium" htmlFor="problem-input">
-                    Décris le problème que tu veux résoudre
-                  </label>
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {problem.length}/600
-                  </span>
-                </div>
-                <textarea
-                  id="problem-input"
-                  value={problem}
-                  onChange={e => setProblem(e.target.value)}
-                  placeholder="Ex: Les petites épiceries et supérettes marocaines n'ont pas accès à un outil simple et abordable pour gérer leurs stocks, leurs commandes fournisseurs et leur caisse. Elles perdent de l'argent à cause des ruptures et de la désorganisation..."
-                  className="input resize-none leading-relaxed"
-                  rows={5}
-                  maxLength={600}
-                  required
-                  aria-label="Description du problème"
-                  style={{ fontSize: '0.875rem' }}
-                />
-                {problem.length > 0 && problem.length < 20 && (
-                  <p className="text-xs mt-1" style={{ color: '#FBB024' }}>
-                    Minimum 20 caractères pour une analyse précise.
-                  </p>
-                )}
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 zellige-overlay">
+        <PublicNavbar navLinks={[]} />
+        <div className="flex items-center justify-center px-4 pt-24 min-h-screen">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="w-14 h-14 bg-turquoise/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-7 h-7 text-turquoise animate-pulse" />
               </div>
-
-              <div>
-                <label className="text-xs font-medium mb-2 block" htmlFor="info-input">
-                  Informations complémentaires sur tes clients <span style={{ color: 'var(--text-secondary)' }}>(optionnel)</span>
-                </label>
-                <textarea
-                  id="info-input"
-                  value={additionalInfo}
-                  onChange={e => setAdditionalInfo(e.target.value)}
-                  placeholder="Ex: Mes clients sont principalement des femmes actives, elles préfèrent payer par carte, elles commandent surtout le soir..."
-                  className="input resize-none leading-relaxed"
-                  rows={3}
-                  maxLength={400}
-                  style={{ fontSize: '0.875rem' }}
-                />
-                <p className="text-[10px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  Ces informations aideront l'IA à affiner la segmentation.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-2" htmlFor="ville-scan">
-                    <span className="flex items-center gap-1">
-                      <MapPin size={12} style={{ color: 'var(--accent)' }} />
-                      Ville / Région
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="ville-scan"
-                      value={ville}
-                      onChange={e => setVille(e.target.value)}
-                      className="select"
-                    >
-                      {VILLES.map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-secondary)' }} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-2" htmlFor="secteur-scan">
-                    <span className="flex items-center gap-1">
-                      <Briefcase size={12} style={{ color: 'var(--accent)' }} />
-                      Secteur <span style={{ color: 'var(--text-secondary)' }}>(optionnel)</span>
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="secteur-scan"
-                      value={secteur}
-                      onChange={e => setSecteur(e.target.value)}
-                      className="select"
-                    >
-                      {SECTEURS.map(s => <option key={s} value={s}>{s || 'Tous les secteurs'}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-secondary)' }} />
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={problem.length < 20}
-                className="btn-primary w-full justify-center text-base py-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-              >
-                <Zap size={18} />
-                Lancer le scan IA
-                <ArrowRight size={16} />
-              </button>
-            </form>
-
-            <ScanHistoryView
-              scans={history}
-              onSelect={handleSelectHistory}
-              currentId={currentScanId}
-            />
-          </div>
-        )}
-
-        {loading && (
-          <div className="card p-10 text-center animate-fade-in">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse-glow"
-              style={{ background: 'rgba(45, 212, 191, 0.1)', color: 'var(--accent)' }}
-            >
-              <Zap size={28} />
+              <h2 className="font-syne font-700 text-2xl text-white">Analyse en cours...</h2>
             </div>
-            <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'Syne' }}>Analyse en cours...</h3>
-            <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>
-              {LOADER_STEPS[loaderStep]}
-            </p>
-            <div className="space-y-3 max-w-xs mx-auto">
-              {LOADER_STEPS.map((step, i) => (
-                <div key={step} className="flex items-center gap-3">
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500"
-                    style={{
-                      background: i <= loaderStep ? 'rgba(45, 212, 191, 0.15)' : 'rgba(51, 65, 85, 0.3)',
-                      border: `1px solid ${i <= loaderStep ? 'rgba(45, 212, 191, 0.4)' : 'var(--border)'}`,
-                    }}
-                  >
-                    {i < loaderStep ? (
-                      <CheckCircle size={13} style={{ color: 'var(--accent)' }} />
-                    ) : i === loaderStep ? (
-                      <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
-                    ) : (
-                      <Clock size={11} style={{ color: 'var(--text-secondary)' }} />
-                    )}
-                  </div>
-                  <span
-                    className="text-xs"
-                    style={{ color: i <= loaderStep ? 'var(--text-primary)' : 'var(--text-secondary)' }}
-                  >
-                    {step}
-                  </span>
+            <div className="space-y-3">
+              {loadingSteps.map((step, i) => (
+                <div key={step} className={`flex items-center gap-3 transition-all duration-500 ${i <= loadStep - 1 ? 'opacity-100' : 'opacity-20'}`}>
+                  {i <= loadStep - 1 ? (
+                    <CheckCircle2 className="w-5 h-5 text-turquoise shrink-0" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-slate-700 shrink-0" />
+                  )}
+                  <span className={`text-sm ${i <= loadStep - 1 ? 'text-white' : 'text-slate-600'}`}>{step}</span>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
-        {result && !loading && (
-          <div ref={resultRef} className="space-y-5">
-            {copied && (
-              <div
-                className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in z-50"
-                style={{ background: 'var(--accent)', color: '#0F172A' }}
-              >
-                <CheckCircle size={15} />
-                Rapport copié dans le presse-papiers
+  if (result) {
+    const isApiResult = 'reponse' in result;
+    
+    return (
+      <div className="min-h-screen bg-slate-950 font-inter zellige-overlay">
+        <PublicNavbar navLinks={[]} />
+        <div className="max-w-4xl mx-auto px-4 pt-24 pb-8">
+          {isApiResult ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden mb-6">
+              <div className="bg-slate-800/50 border-b border-slate-700/50 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-turquoise" />
+                  <span className="font-syne font-700 text-white">Réponse réglementaire</span>
+                </div>
+                <span className="text-sm text-slate-400">{result.thematique} · {result.ville}</span>
               </div>
-            )}
-            <ScanResultView
-              result={result}
-              problem={problem}
-              onReset={handleReset}
-              onCopy={handleCopy}
-              onNavigate={navigate}
-            />
-            <ScanHistoryView
-              scans={history}
-              onSelect={handleSelectHistory}
-              currentId={currentScanId}
-            />
+              <div className="p-6">
+                <div 
+                  className="text-slate-300 leading-relaxed prose prose-invert prose-p:text-slate-300 prose-strong:text-white prose-headings:text-white"
+                  dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(result.reponse || 'En attente de réponse...') }}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden mb-6">
+                <div className="bg-slate-800/50 border-b border-slate-700/50 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-turquoise" />
+                    <span className="font-syne font-700 text-white">Réponse réglementaire</span>
+                  </div>
+                  <span className="text-sm text-slate-400">{result.thematique} · {result.ville}</span>
+                </div>
+                <div className="p-6">
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    <span className="text-xs text-slate-500">Sources consultées:</span>
+                    {result.sources.map((s: string) => (
+                      <span key={s} className="text-xs bg-turquoise/10 text-turquoise px-2.5 py-1 rounded-full">{s}</span>
+                    ))}
+                  </div>
+                  <p className="text-slate-300 leading-relaxed mb-6">{result.summary}</p>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                {[
+                  { icon: Coins, title: 'Capital minimum', value: '1 MAD' },
+                  { icon: Users, title: 'Associés', value: '1 à 50' },
+                  { icon: Clock, title: 'Délai moyen', value: '72h' },
+                ].map((c) => <ResultCard key={c.title} {...c} />)}
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
+                <h3 className="font-syne font-700 text-white text-sm mb-4 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-turquoise" />
+                  Points clés à retenir
+                </h3>
+                <ul className="space-y-2">
+                  {result.pointsCles.map((p: string) => (
+                    <li key={p} className="flex items-start gap-2 text-sm text-slate-300">
+                      <span className="w-1.5 h-1.5 bg-turquoise rounded-full shrink-0 mt-1.5" />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
+                <h3 className="font-syne font-700 text-white text-sm mb-4">Étapes recommandées</h3>
+                <div className="space-y-4">
+                  {result.etapes.map((e: any) => (
+                    <div key={e.step} className="flex gap-4">
+                      <div className="w-8 h-8 rounded-full bg-turquoise/20 text-turquoise flex items-center justify-center font-syne font-700 text-sm shrink-0">{e.step}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-white text-sm">{e.title}</h4>
+                          <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{e.timeline}</span>
+                        </div>
+                        <p className="text-slate-400 text-sm">{e.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
+                <h3 className="font-syne font-700 text-white text-sm mb-4">Organismes concernés</h3>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {result.obligations.map((o: any) => (
+                    <div key={o.org} className="bg-slate-800/50 rounded-lg p-4 flex items-start gap-3">
+                      <Building2 className="w-5 h-5 text-turquoise shrink-0" />
+                      <div>
+                        <div className="text-sm text-white font-medium">{o.org}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{o.role}</div>
+                        <br />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button onClick={handleNewScan} className="flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-500 text-white px-5 py-2.5 rounded-xl text-sm transition">
+              <RotateCcw className="w-4 h-4" /> Nouvelle question
+            </button>
+            <button onClick={handleCopy} className="flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-500 text-white px-5 py-2.5 rounded-xl text-sm transition">
+              <Copy className="w-4 h-4" /> {copied ? 'Copié !' : 'Copier la réponse'}
+            </button>
+            <Link to="/dashboard/coach" className="flex items-center justify-center gap-2 bg-turquoise hover:bg-turquoise-dark text-slate-950 font-medium px-5 py-2.5 rounded-xl text-sm transition">
+              <MessageCircle className="w-4 h-4" /> Coach IA <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 font-inter zellige-overlay">
+      <PublicNavbar navLinks={[]} />
+      <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
+        {!user ? (
+          <div className="bg-amber/10 border border-amber/20 rounded-xl p-4 flex items-start gap-3 mb-6">
+            <AlertTriangle className="w-5 h-5 text-amber shrink-0 mt-0.5" />
+            <div>
+              <p className="text-amber text-sm font-medium">Mode invité</p>
+              <p className="text-slate-400 text-xs">Tes consultations ne seront pas sauvegardées. <Link to="/register" className="text-turquoise hover:underline">Crée un compte</Link> pour conserver ton historique.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-turquoise/10 border border-turquoise/20 rounded-xl p-4 flex items-start gap-3 mb-6">
+            <CheckCircle2 className="w-5 h-5 text-turquoise shrink-0 mt-0.5" />
+            <div>
+              <p className="text-turquoise text-sm font-medium">Compte connecté</p>
+              <p className="text-slate-400 text-xs">Tes consultations seront enregistrées dans ton historique.</p>
+            </div>
           </div>
         )}
+
+        <h1 className="font-syne font-800 text-3xl text-white mb-2">Pose ta question réglementaire.</h1>
+        <p className="text-slate-400 text-sm mb-8">Décris ton projet et obtiens une réponse basée sur les textes officiels marocains en vigueur.</p>
+
+        <div className="space-y-5">
+          <div>
+            <label className="text-sm text-slate-300 mb-2 block">Ta question</label>
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              maxLength={800}
+              placeholder="Ex: Je veux créer une SARL à Casablanca avec un associé. Quelles sont les étapes, le capital minimum et les obligations fiscales ?"
+              className="w-full h-40 bg-slate-950 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-600 text-sm resize-none focus:outline-none focus:border-turquoise/50 transition"
+            />
+            <div className="text-right text-xs text-slate-600 mt-1">{question.length}/800</div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-slate-300 mb-2 block">Thématique</label>
+              <select value={thematique} onChange={(e) => setThematique(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-turquoise/50 transition appearance-none">
+                {thematiques.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-slate-300 mb-2 block">Ville</label>
+              <select value={ville} onChange={(e) => setVille(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-turquoise/50 transition appearance-none">
+                {villes.map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <button onClick={handleScan} disabled={!question.trim()} className="w-full bg-turquoise hover:bg-turquoise-dark disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-semibold py-4 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-lg shadow-turquoise/20">
+            Analyser ma question <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
